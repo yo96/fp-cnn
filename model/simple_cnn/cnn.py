@@ -1,11 +1,11 @@
 
 print ('importing matplotlib, numpy, tensorflow...')
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import tensorflow as tf 
 import numpy as np
 import time
 from datetime import timedelta
-from plot_helper import *
+# from plot_helper import *
 print("tensorflow version: ",tf.__version__)
 
 #====================================================================
@@ -64,10 +64,10 @@ images = data.test.images[0:9]
 # get the classes for those images
 cls_true = data.test.cls[0:9]
 
-#plot these images and true labels
-print("\nPlotting some inputs from testing set...")
-print("\nClose the figure to continue...")
-plot_images(images=images, cls_true=cls_true)
+# #plot these images and true labels
+# print("\nPlotting some inputs from testing set...")
+# print("\nClose the figure to continue...")
+# plot_images(images=images, cls_true=cls_true)
 
 #=====================================================================
 # Construct CNN
@@ -240,5 +240,9 @@ print_test_accuracy()
 
 # TODO: output the weights of the model HERE? 
 # Perhaps tensorflow already have api for this...
+tvars = tf.trainable_variables()
+tvars_val = sess.run( tvars )
+for var, val in zip( tvars, tvars_val ):
+  print( var.name, val )
 
 print("Session finished!")
