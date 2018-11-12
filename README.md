@@ -1,7 +1,7 @@
 # fp-cnn
 End-to-end frame work to map a CNN onto FPGA.
 
-## how to run a project
+## How to use the makefile
 - Software emulation   
 ~~~
 make -f sdaccel.mk run_cpu_em
