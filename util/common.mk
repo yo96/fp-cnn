@@ -104,8 +104,9 @@ endef
 
 ####################### End of Helper Functions ######################
 
-${HOST_EXE_DIR}/${HOST_EXE} : ${OBJECTS}
+${HOST_EXE_DIR}/${HOST_EXE} : ${OBJECTS} ${HOST_HDRS}
 	${CC} -o $@ ${OBJECTS} ${HOST_LFLAGS}  
+
 
 # Rules to make CLXOs:
 $(foreach clxo,$(CLXOS),$(eval $(call mk_clxo,$(clxo),$(TARGET))))
