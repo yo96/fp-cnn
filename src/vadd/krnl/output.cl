@@ -1,6 +1,6 @@
 #include "def_helper.h"
 
-# define BUFFER_SIZE (4096/64) // 4KB per burst transaction
+# define BUFFER_SIZE (64) // 4KB per burst transaction
 
 __attribute__((reqd_work_group_size(1,1,1)))
 __kernel

@@ -6,12 +6,14 @@
 typedef uint16 bus_t;
 typedef union {
   bus_t bus_val;
-  short ele[BUS_N_ELE] __attribute__((xcl_array_partition(complete,1)));
+  short ele[BUS_N_ELE]; 
+  //__attribute__((xcl_array_partition(complete,1)));
 } short_bus; 
 
 typedef union {
   bus_t bus_val;
-  int ele[BUS_N_ELE/2] __attribute__((xcl_array_partition(complete,1)));
+  int ele[BUS_N_ELE/2]; 
+  //__attribute__((xcl_array_partition(complete,1)));
   } int_bus;
 
 /*****************************************************************************

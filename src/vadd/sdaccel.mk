@@ -36,9 +36,9 @@ HOST_LFLAGS =  -L${XILINX_SDX}/runtime/lib/x86_64 -lxilinxopencl -lrt -pthread
 
 vadd_SRCS   = krnl/*.cl
 vadd_HDRS   = krnl/*.h
-vadd_CFLAGS = -g --memory_port_data_width all:512 --max_memory_ports load_data --sp load_data_1.m_axi_gmem0:bank1
+vadd_CFLAGS = -g --memory_port_data_width all:512 --max_memory_ports load_data
 vadd_CFLAGS += -I krnl
-vadd_LFLAGS = --max_memory_ports load_data --sp load_data_1.m_axi_gmem0:bank1
+vadd_LFLAGS =--xp param:compiler.useHlsGpp=1
 
 # Not used for pure HLS design
 sys_array_HDLSRCS = hdl/*.v kernel.xml scripts/package_kernel.tcl scripts/gen_xo.tcl
@@ -53,11 +53,11 @@ XOS = $(CLXOS) $(RTLXOS)
 
 XCLBIN_NAME   =bin_mem
 XCLBIN_DIR    =xclbin
-XCLBIN_LFLAGS =#--optimize 3
+XCLBIN_LFLAGS =--xp param:compiler.useHlsGpp=1#--optimize 3
 
 #===============================================================================
 # Device 
 #===============================================================================
-XDEVICE=xilinx_adm-pcie-8k5_2ddr_4_0
-
+#XDEVICE=xilinx_adm-pcie-8k5_2ddr_4_0
+XDEVICE=xilinx_kcu1500_dynamic_5_0
 include ../../util/common.mk
