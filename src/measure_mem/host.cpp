@@ -97,13 +97,13 @@ int main(int argc, char* argv[]) {
     
     // These commands will allocate memory on the Device. The cl::Buffer objects can
     // be used to reference the memory locations on the device. 
-    //cl_mem_ext_ptr_t input_ext;
-    //input_ext.flags = XCL_MEM_DDR_BANK0;
-    //input_ext.obj = source_data.data();
-    //input_ext.param = 0;
+    cl_mem_ext_ptr_t input_ext;
+    input_ext.flags = XCL_MEM_DDR_BANK1;
+    input_ext.obj = source_data.data();
+    input_ext.param = 0;
 
     cl::Buffer buffer_data(context, CL_MEM_USE_HOST_PTR   | CL_MEM_READ_ONLY,
-                           read_Bsize, source_data.data(), NULL);
+                           read_Bsize, &input_ext, NULL);
     //cl_mem buffer_data = clCreateBuffer(
     //                      context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY |
     //                               CL_MEM_EXT_PTR_XILINX,  
