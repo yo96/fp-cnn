@@ -67,11 +67,17 @@ int main(int argc, char* argv[]) {
      ************************************************************************/
     // Set it to be 4KB so that hw_emu run faster. 
     // Change this to a large number when running on board
-    const int DATA_SIZE = 1024 * 64; 
-    size_t Bsize = DATA_SIZE * sizeof(int);
-    std::vector<int,aligned_allocator<int>> source_a(DATA_SIZE, 1);
-    std::vector<int,aligned_allocator<int>> source_b(DATA_SIZE, 1);
-    std::vector<int,aligned_allocator<int>> source_c(DATA_SIZE, 0);
+    const int IN_FMAP_SIZE  = 28 * 28 * 16; 
+    const int WTS_SIZE      = 3 * 3 * 16 * 16;
+    const int OUT_FMAP_SIZE = 14 * 14 * 16;
+    
+    size_t fmap_Bsize = IN_FMAP_SIZE  * sizeof(int);
+    size_t wts_Bsize  = WTS_SIZE      * sizeof(int);
+    size_t out_Bsize  = OUT_FMAP_SIZE * sizeof(int);
+
+    std::vector<int,aligned_allocator<int>> src_fmap(IN_FMAP_SIZE,  1);
+    std::vector<int,aligned_allocator<int>> src_wts (WTS_SIZE,      1);
+    std::vector<int,aligned_allocator<int>> src_out (OUT_FMAP_SIZE, 0);
 
     // Creating Context and Command Queue for selected device
     cl::Context context(device);
@@ -95,9 +101,10 @@ int main(int argc, char* argv[]) {
     
     // This call will get the kernel object from program.
     std::cout << "Creating kernels..." << std::endl;
-    cl::Kernel krnl_load(program, "load_data" );
-    cl::Kernel krnl_comp(program, "compute"   );
-    cl::Kernel krnl_wb  (program, "write_back");    
+    cl::Kernel krnl_load_fmap(program, "load_fmap");
+    cl::Kernel krnl_load_wts (program, "load_wts" );
+    cl::Kernel krnl_conv     (program, "compute"  );
+    cl::Kernel krnl_output   (program, "load_out" );    
     
     // produces weird bugs if using multiple DDR...
     //cl_mem_ext_ptr_t ext_a;
@@ -116,29 +123,42 @@ int main(int argc, char* argv[]) {
     //ext_b.param = 0;
 
     std::cout << "Allocating buffers..." << std::endl;
-    cl::Buffer buffer_a(context, CL_MEM_USE_HOST_PTR   | CL_MEM_READ_ONLY,
-                        Bsize, source_a.data(), NULL);
-    cl::Buffer buffer_b(context, CL_MEM_USE_HOST_PTR   | CL_MEM_READ_ONLY,
-                        Bsize, source_b.data(), NULL);
-    cl::Buffer buffer_c(context, CL_MEM_USE_HOST_PTR   | CL_MEM_WRITE_ONLY,
-                        Bsize, source_c.data(), NULL);
+    cl::Buffer buf_fmap(context, CL_MEM_USE_HOST_PTR  | CL_MEM_READ_ONLY,
+                        fmap_Bsize, src_fmap.data(), NULL);
+    cl::Buffer buf_wts (context, CL_MEM_USE_HOST_PTR  | CL_MEM_READ_ONLY,
+                        wts_Bsize,  src_wts.data(), NULL);
+    cl::Buffer buf_out(context, CL_MEM_USE_HOST_PTR   | CL_MEM_WRITE_ONLY,
+                        out_Bsize,  src_out.data(), NULL);
 
     
     // Data will be transferred from system memory over PCIe to the FPGA on-board
     // DDR memory.
     std::cout << "Transferring data to DDR..." << std::endl;
-    q.enqueueMigrateMemObjects({buffer_a,buffer_b}, 0); /* 0 means from host*/
+    q.enqueueMigrateMemObjects({buf_fmap,buf_out}, 0); /* 0 means from host*/
     q.finish();
     //set the kernel Arguments
-    krnl_load.setArg(0, buffer_a);
-    krnl_load.setArg(1, buffer_b);
-    krnl_load.setArg(2, DATA_SIZE);
+    krnl_load_fmap.setArg(0, buf_fmap); // fmap ptr
+    krnl_load_fmap.setArg(1, 28      ); // fmap_wid
+    krnl_load_fmap.setArg(2, 28      ); // fmap_ht
+    krnl_load_fmap.setArg(3, 1       ); // fmap_dep
+    krnl_load_fmap.setArg(4, 3       ); // fil_wid
+    krnl_load_fmap.setArg(5, 3       ); // fil_ht
+    krnl_load_fmap.setArg(6, 1       ); // padding
+    krnl_load_fmap.setArg(7, 2       ); // stride
+    krnl_load_fmap.setArg(8, 1       ); // niter 
 
-    krnl_comp.setArg(0, DATA_SIZE);
+    krnl_load_wts.setArg(0, buf_wts    );
+    krnl_load_wts.setArg(1, WTS_SIZE/16);
 
-    krnl_wb.setArg(0, buffer_c );
-    krnl_wb.setArg(1, DATA_SIZE);
-    
+    krnl_conv.setArg(0, 14 ); // o_wid
+    krnl_conv.setArg(1, 14 ); // o_ht 
+    krnl_conv.setArg(2, 16 ); // n_fil
+    krnl_conv.setArg(3, 3*3); // fil_size
+    krnl_conv.setArg(4, 1  ); // n_iter
+
+    krnl_output.setArg(0, buf_out ); // o_fmap ptr
+    krnl_output.setArg(1, 3*3     ); // fil_size
+    krnl_output.setArg(2, 14 * 14 ); // o_size
     // Launch the Kernel
     struct timespec start, end;
     double time;
@@ -146,9 +166,10 @@ int main(int argc, char* argv[]) {
     std::cout << "\nLaunching kernel..." <<std::endl;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    q.enqueueTask(krnl_load);
-    q.enqueueTask(krnl_comp);
-    q.enqueueTask(krnl_wb  );
+    q.enqueueTask(krnl_load_fmap);
+    q.enqueueTask(krnl_load_wts );
+    q.enqueueTask(krnl_conv     );
+    q.enqueueTask(krnl_output   );
     q.finish();
 
     clock_gettime(CLOCK_MONOTONIC, &end);
@@ -161,16 +182,19 @@ int main(int argc, char* argv[]) {
 
 
     std::cout << "Reading results from DDR..." << std::endl;
-    q.enqueueMigrateMemObjects({buffer_c},CL_MIGRATE_MEM_OBJECT_HOST);
+    q.enqueueMigrateMemObjects({buf_out},CL_MIGRATE_MEM_OBJECT_HOST);
     q.finish();
 
     std::cout << "Verifying results..." << std::endl;
     bool match = true;
-    for (int i=0;i<DATA_SIZE;i++){
-      if (source_c[i] != 2){
+    for (int i=0;i<OUT_FMAP_SIZE;i++){
+      if (src_out[i] != 144 && src_out[i] != 64 && src_out[i] != 96){
         match = false;  
-        std::cout << i << ": "<< source_c[i] << std::endl;
+        std::cout << i << ": "<< src_out[i] << std::endl;
         break;
+      }
+      else {
+        //std::cout << i << ": "<< src_out[i] << std::endl;
       }
     }
 

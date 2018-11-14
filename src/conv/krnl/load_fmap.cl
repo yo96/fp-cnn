@@ -20,6 +20,8 @@ void load_fmap(
              int  stride,
              int  n_iter    )
 {
+  //printf("fmap: args: wid:%d, ht:%d, dep:%d, fil_wid:%d, fli_ht:%d.\n",
+  //     fmap_wid, fmap_ht, fmap_dep, fil_wid, fil_ht);
   bus_t to_pipe;
   int X = fmap_wid + padding*2 - fil_wid + 1;
   int Y = fmap_ht  + padding*2 - fil_ht  + 1;
@@ -28,17 +30,20 @@ void load_fmap(
     for (int x=0;x<X;x+=stride){
       for (int y=0;y<Y;y+=stride){
         
-        for (int c=0;c<fil_wid;c++){
-          for (int r=0;r<fil_ht;r++){
+        for (int r=0;r<fil_ht;r++){
+          for (int c=0;c<fil_wid;c++){
             int x_addr = x + c - padding;
             int y_addr = y + r - padding;
             
-            if (x_addr<0 || x_addr>fil_wid-1 || y_addr<0 || y_addr>fil_wid-1)
+            if (x_addr<0 || x_addr>fmap_wid-1 || y_addr<0 || y_addr>fmap_ht-1){
               to_pipe = 0; //padding
+              //printf("[load](%d,%d)%d: feeding 0-padding to pipe\n",x,y,c+r*fil_wid);              
+            }
             else {
               // Assumes only fetch once in channel direction
-              int rd_addr = x_addr + y_addr*fil_wid;
+              int rd_addr = x_addr + y_addr*fmap_wid;
               to_pipe = fmap[rd_addr];
+              //printf("[load](%d,%d)%d: feeding fmap[%d] to pipe\n",x,y,c+r*fil_wid,rd_addr);
             }
             write_pipe_block(pipe_fmap, &to_pipe);
           } // fil_wid
@@ -46,5 +51,5 @@ void load_fmap(
       } // Y
     } // X
   } // n_iter
-  printf("load_fmap: DONE\n");
+  //printf("load_fmap: DONE\n");
 }

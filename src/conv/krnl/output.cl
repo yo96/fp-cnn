@@ -5,7 +5,7 @@
 
 __attribute__((reqd_work_group_size(1,1,1)))
 __kernel
-void output( 
+void load_out( 
   __global bus_t* o_fmap,
              int  fil_size,
              int  o_size    ) 
@@ -31,4 +31,5 @@ void output(
     } // fil_size
     o_fmap[i] = out_bus;
   } // o_size
+
 }
