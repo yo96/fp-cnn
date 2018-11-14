@@ -34,11 +34,11 @@ HOST_LFLAGS =  -L${XILINX_SDX}/runtime/lib/x86_64 -lxilinxopencl -lrt -pthread
 	# base_HDLSRCS = kernel source files (.v .xml .tcl)
 	# base_TCL     = tcl script for generating xo object
 
-vadd_SRCS   = krnl/*.cl
-vadd_HDRS   = krnl/*.h
-vadd_CFLAGS = -g --memory_port_data_width all:512 --max_memory_ports load_data --sp load_data_1.m_axi_gmem0:bank1
-vadd_CFLAGS += -I krnl
-vadd_LFLAGS = --max_memory_ports load_data --sp load_data_1.m_axi_gmem0:bank1
+conv_SRCS   = krnl/*.cl
+conv_HDRS   = krnl/*.h
+conv_CFLAGS = -g --memory_port_data_width all:512 #--max_memory_ports all 
+conv_CFLAGS += -I krnl
+conv_LFLAGS =
 
 # Not used for pure HLS design
 sys_array_HDLSRCS = hdl/*.v kernel.xml scripts/package_kernel.tcl scripts/gen_xo.tcl
@@ -47,13 +47,13 @@ sys_array_TCL     = scripts/gen_xo.tcl
 #===============================================================================
 # xos and xclbin
 #===============================================================================
-CLXOS = vadd
+CLXOS = conv
 RTLXOS = 
 XOS = $(CLXOS) $(RTLXOS)
 
-XCLBIN_NAME   =bin_mem
+XCLBIN_NAME   =bin_conv
 XCLBIN_DIR    =xclbin
-XCLBIN_LFLAGS =#--optimize 3
+XCLBIN_LFLAGS =#--xp param:compiler.useHlsGpp=1#--optimize 3
 
 #===============================================================================
 # Device 
