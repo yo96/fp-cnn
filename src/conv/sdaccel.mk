@@ -58,6 +58,15 @@ XCLBIN_LFLAGS =#--xp param:compiler.useHlsGpp=1#--optimize 3
 #===============================================================================
 # Device 
 #===============================================================================
+# Available devices for ece-linux are:
+#  - xilinx_kcu1500_dynamic_5_0
+#  - xilinx_vcu1525_dynamic_5_1
+#  - zc702
+#  - zc706
+#  - zcu102
+#  - zcu104
+#  - zcu106
+#  - zed
 #XDEVICE=xilinx_adm-pcie-8k5_2ddr_4_0
 XDEVICE=xilinx_kcu1500_dynamic_5_0
 include ../../util/common.mk
