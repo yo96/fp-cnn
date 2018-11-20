@@ -1,3 +1,9 @@
+//#include <stdio.h>
+//#include <stdef.h>
+//#include <ap_cint.h>
+
+//typedef ap_int<16> base_type;
+
 #define BUS_N_ELE 32
 /******************************************************************************
  * Type definitions 
@@ -68,6 +74,6 @@ bus_t int_to_bus(int in[BUS_N_ELE/2]){
 /*============================================================================ 
  *  Pipe definitions
  *============================================================================*/
-pipe bus_t pipe_fmap __attribute__((xcl_reqd_pipe_depth(16)));
-pipe bus_t pipe_wts  __attribute__((xcl_reqd_pipe_depth(16)));
-pipe bus_t pipe_out  __attribute__((xcl_reqd_pipe_depth(16)));
+//pipe bus_t pipe_fmap __attribute__((xcl_reqd_pipe_depth(16)));
+//pipe bus_t pipe_wts  __attribute__((xcl_reqd_pipe_depth(16)));
+//pipe bus_t pipe_out  __attribute__((xcl_reqd_pipe_depth(16)));
