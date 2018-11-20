@@ -49,7 +49,7 @@ else ifeq (${SDA_FLOW},hw_emu)
 	EMU_MODE=hw_emu
 endif
 
-
+CLCC_OPT += 
 CLCC_OPT += $(CLCC_OPT_LEVEL) ${DEVICE_REPO_OPT} --platform ${XDEVICE} -o ${XCLBIN}
 CLCC_OPT += -s
 
@@ -60,8 +60,10 @@ HOST_ARGS = ${XCLBIN_DIR}/${XCLBIN}
 #====================================================================
 #                          Helper Functions 
 #====================================================================
-CLFLAGS:= --xp "param:compiler.preserveHlsOutput=1" --xp "param:compiler.generateExtraRunData=true" \
-	-s --platform ${XDEVICE}
+CLFLAGS:= -I/$(XILINX_SDX)/Vivado_HLS/include/ \
+--xp "param:compiler.preserveHlsOutput=1" \
+--xp "param:compiler.generateExtraRunData=true" \
+-s --platform ${XDEVICE}
 
 # mk_clxo - create an xo from a set of cl kernel sources
 #  CLC - kernel compiler to use
