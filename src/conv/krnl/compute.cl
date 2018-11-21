@@ -1,17 +1,6 @@
-//#include "ap_int.h"
-//#include "def_helper.h"
 #include "defs.h"
-#define N_PER_BUS 16
 
-//#define FIL_BUF_WID   3
-//#define FIL_BUF_HT    3
-//#define FIL_BUFF_SIZE 9
-//#define NUM_FIL_BUF   16
-//#define SYS_WID       16
-//#define SYS_HT        16
-//typedef int base;
 #define SHREG_SIZE    (SYS_WID+1)*SYS_WID/2 //1+2+3+...+16
-
 
 /******************************************************************************
  * [compute] kernel
@@ -23,13 +12,18 @@ __kernel
 void compute( 
   int o_wid,
   int o_ht,
+  int o_blk,
   int n_fil,
-  int fil_size,
+  int fil_size, // in wts_bus_
   int n_iter ) 
 {
   // On-chip storage
-  ddr_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
-  __attribute__((xcl_array_partition(complete, 1)));
+  wts_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
+  __attribute__((xcl_array_partition(complete, 1)))
+  __attribute__((xcl_array_reshape(cyclic, WBUS_PER_DDRBUS, 2)));
+
+  //wts_bus_t wts_ser[NUM_FIL_BUF][WBUS_PER_DDRBUS]
+  //__attribute__((xcl_array_partition(complete, 0)));
 
   base sys[SYS_HT][SYS_WID] 
   __attribute__((xcl_array_partition(complete, 0)));
@@ -40,26 +34,32 @@ void compute(
   base shreg_fmap[SHREG_SIZE]
   __attribute__((xcl_array_partition(complete, 1)));
 
-  //printf("comp: args: o_wid:%d, o_ht:%d, n_fil:%d, fil_size:%d, n_iter:%d.\n",
-  //       o_wid, o_ht, n_fil, fil_size, n_iter);
   for (int ni=0;ni<n_iter;ni++){
     // read wts into BRAM
     LOAD_WTS: 
     for (int i=0;i<NUM_FIL_BUF;i++){
-      for (int j=0;j<fil_size;j++){
-        ddr_bus_t from_wts_pipe;
-        read_pipe_block(pipe_wts, &from_wts_pipe);
-        wts_ram[i][j] = from_wts_pipe;
-      }
-    }
+      for (int j=0;j<fil_size;j+=WBUS_PER_DDRBUS){        
+        ddr_bus from_wts_pipe;
+        wts_bus to_wts_ram[WBUS_PER_DDRBUS];
+        read_pipe_block(pipe_wts, &from_wts_pipe.bus_val);
+        // Serialize ddr_bus into wts_bus
+        __attribute__((opencl_unroll_hint))
+        for (int k=0;k<WBUS_PER_DDRBUS;k++){
+          for (int m=0;m<BASE_PER_WBUS;m++){
+            int offset = k*BASE_PER_WBUS;
+            to_wts_ram[k].vec[m] = from_wts_pipe.vec[m+offset];
+            wts_ram[i][j+k] = to_wts_ram[k].bus_val;                                
+          } // m
+        } // k
+      } // j - fil_size
+    } // i - NUM_FIL_BUF
     //printf("comp: wts loaded.\n");
+
     // iterating output fmap
     ITER_FMAP:
     for (int y=0;y<o_ht;y++){
       for (int x=0;x<o_wid;x++){
         //printf("comp: iterating ofmap(%d,%d).\n",y,x);
-        
-          // TODO: Serialize wts_bus
 
           __attribute__((xcl_pipeline_loop))
           COMPUTE:
@@ -84,11 +84,10 @@ void compute(
             if(x==0 && y==0 && f==8){
                 //printf("\n");                  
             }
-
             // feed wts into shreg
             __attribute__((opencl_unroll_hint))
             for (int nf=0;nf<NUM_FIL_BUF;nf++){
-              fmap_bus wbus;
+              wts_bus wbus;
               wbus.bus_val = wts_ram[nf][f];
               for (int i=0,j=0,nreg=0;j<SYS_WID;i+=nreg,j++){
                 nreg++;               
@@ -148,5 +147,5 @@ void compute(
     } // o_ht
     //printf("comp: %d-th iteration.\n", ni);
   } // n_iter
-  //printf("comp: done\n");
+  printf("comp: done\n");
 }

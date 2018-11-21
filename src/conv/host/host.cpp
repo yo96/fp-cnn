@@ -67,8 +67,8 @@ int main(int argc, char* argv[]) {
      ************************************************************************/
     // Set it to be 4KB so that hw_emu run faster. 
     // Change this to a large number when running on board
-    const int IN_FMAP_SIZE  = 28 * 28 * 16; 
-    const int WTS_SIZE      = 3 * 3 * 16 * 16;
+    const int IN_FMAP_SIZE  = 28 * 28 * 32; 
+    const int WTS_SIZE      = 3 * 3 * 32 * 16;
     const int OUT_FMAP_SIZE = 14 * 14 * 16;
     
     size_t fmap_Bsize = IN_FMAP_SIZE  * sizeof(int);
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
     krnl_load_fmap.setArg(0, buf_fmap); // fmap ptr
     krnl_load_fmap.setArg(1, 28      ); // fmap_wid
     krnl_load_fmap.setArg(2, 28      ); // fmap_ht
-    krnl_load_fmap.setArg(3, 1       ); // fmap_dep
+    krnl_load_fmap.setArg(3, 2       ); // fmap_blk
     krnl_load_fmap.setArg(4, 3       ); // fil_wid
     krnl_load_fmap.setArg(5, 3       ); // fil_ht
     krnl_load_fmap.setArg(6, 1       ); // padding
@@ -150,14 +150,15 @@ int main(int argc, char* argv[]) {
     krnl_load_wts.setArg(0, buf_wts    );
     krnl_load_wts.setArg(1, WTS_SIZE/16);
 
-    krnl_conv.setArg(0, 14 ); // o_wid
-    krnl_conv.setArg(1, 14 ); // o_ht 
-    krnl_conv.setArg(2, 16 ); // n_fil
-    krnl_conv.setArg(3, 3*3); // fil_size
-    krnl_conv.setArg(4, 1  ); // n_iter
+    krnl_conv.setArg(0, 14   ); // o_wid
+    krnl_conv.setArg(1, 14   ); // o_ht 
+    krnl_conv.setArg(2, 1    ); // o_blk
+    krnl_conv.setArg(3, 16   ); // n_fil
+    krnl_conv.setArg(4, 3*3*2); // fil_size
+    krnl_conv.setArg(5, 1    ); // n_iter
 
     krnl_output.setArg(0, buf_out ); // o_fmap ptr
-    krnl_output.setArg(1, 3*3     ); // fil_size
+    krnl_output.setArg(1, 3*3*2   ); // fil_size
     krnl_output.setArg(2, 14 * 14 ); // o_size
     // Launch the Kernel
     struct timespec start, end;
@@ -188,10 +189,10 @@ int main(int argc, char* argv[]) {
     std::cout << "Verifying results..." << std::endl;
     bool match = true;
     for (int i=0;i<OUT_FMAP_SIZE;i++){
-      if (src_out[i] != 144 && src_out[i] != 64 && src_out[i] != 96){
+      if (src_out[i] != 288 && src_out[i] != 128 && src_out[i] != 192){
         match = false;  
         std::cout << i << ": "<< src_out[i] << std::endl;
-        break;
+        //break;
       }
       else {
         //std::cout << i << ": "<< src_out[i] << std::endl;

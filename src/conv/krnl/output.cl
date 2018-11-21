@@ -11,19 +11,33 @@ void load_out(
                  int  o_size    ) 
 {
   out_bus from_pipe;
-  out_bus to_ddr;
+  out_bus acc;
+  ddr_bus to_ddr;
 
-  for (int i=0;i< o_size;i++){
+  for (int i=0;i< o_size;i+=OBUS_PER_DDRBUS){
     to_ddr.bus_val = 0;
-    for (int j=0;j<fil_size;j++){
-      // read an output bus from pipe
-      read_pipe_block(pipe_out, &from_pipe.bus_val);
-      // accumulate partial sum
-      for (int k=0;k<BASE_PER_OBUS;k++){
-        to_ddr.vec[k] += from_pipe.vec[k];
-      }
-    } // fil_size
-    o_fmap[i] = to_ddr.bus_val;
-  } // o_size
+    
+    for (int m=0;m<OBUS_PER_DDRBUS;m++){
 
+      // accumulate partial sum
+      acc.bus_val = 0;
+      for (int j=0;j<fil_size;j++){
+        // read an output bus from pipe
+        read_pipe_block(pipe_out, &from_pipe.bus_val);
+        for (int k=0;k<BASE_PER_OBUS;k++){
+          acc.vec[k] += from_pipe.vec[k];
+        }
+      } // fil_size
+      
+      // write [acc] into a ddr_bus
+      for (int j=0;j<OBUS_PER_DDRBUS;j++){
+        for (int k=0;k<BASE_PER_OBUS;k++){
+          to_ddr.vec[k+j*BASE_PER_OBUS] = acc.vec[k];
+        }
+      }
+    } // m - OBUS_PER_DDRBUS
+    o_fmap[i] = to_ddr.bus_val;
+ 
+  } // o_size
+  //printf("[load_out]: DONE!\n");
 }
