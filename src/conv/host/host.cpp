@@ -4,6 +4,7 @@
 #include <iomanip>
 #include "allocator.h"
 #include <CL/cl_ext.h>
+#include <math.h>
 
 //TARGET_DEVICE macro needs to be passed from gcc command line
 #if defined(SDX_PLATFORM) && !defined(TARGET_DEVICE)
@@ -13,6 +14,17 @@
 #endif
 
 #define BILLION 1000000000L
+// assumes a square systolic array
+#define BASE_PER_DDRBUS 32
+#define BASE_PER_FBUS   16
+#define BASE_PER_WBUS   BASE_PER_FBUS
+#define BASE_PER_OBUS   BASE_PER_FBUS
+#define FBUS_PER_DDRBUS BASE_PER_DDRBUS/BASE_PER_FBUS
+#define WBUS_PER_DDRBUS FBUS_PER_DDRBUS
+#define OBUS_PER_DDRBUS FBUS_PER_DDRBUS
+
+#define NUM_FIL_BUF 16 // number of on-chip filter buffers
+typedef short base;
 
 static const std::string error_message =
     "Error: Result mismatch:\n"
@@ -65,19 +77,36 @@ int main(int argc, char* argv[]) {
     /************************************************************************* 
      * HOST CODE AREA  
      ************************************************************************/
-    // Set it to be 4KB so that hw_emu run faster. 
-    // Change this to a large number when running on board
-    const int IN_FMAP_SIZE  = 28 * 28 * 32; 
-    const int WTS_SIZE      = 3 * 3 * 32 * 16;
-    const int OUT_FMAP_SIZE = 14 * 14 * 16;
-    
-    size_t fmap_Bsize = IN_FMAP_SIZE  * sizeof(int);
-    size_t wts_Bsize  = WTS_SIZE      * sizeof(int);
-    size_t out_Bsize  = OUT_FMAP_SIZE * sizeof(int);
+    const int fmap_wid  = 28;
+    const int fmap_ht   = 28;
+    const int fmap_dep  = 32;
+    const int fmap_size = fmap_wid * fmap_ht * fmap_dep;
+    const int fmap_nblk = fmap_dep/BASE_PER_FBUS;
 
-    std::vector<int,aligned_allocator<int>> src_fmap(IN_FMAP_SIZE,  1);
-    std::vector<int,aligned_allocator<int>> src_wts (WTS_SIZE,      1);
-    std::vector<int,aligned_allocator<int>> src_out (OUT_FMAP_SIZE, 0);
+    const int num_fil  = 16;
+    const int fil_ht   = 3;
+    const int fil_wid  = 3;
+    const int fil_dep  = fmap_dep;
+    const int fil_size = fil_wid * fil_ht * fil_dep;
+    const int wts_size = fil_size * num_fil;
+
+    const int conv_stride = 1;
+    const int padding  = 1; // to be changed 
+    const int n_iter   = num_fil/NUM_FIL_BUF;
+
+    const int ofmap_wid   = ceil( (float)(fmap_wid)/conv_stride );
+    const int ofmap_ht    = ceil( (float)(fmap_ht )/conv_stride );
+    const int ofmap_dep   = num_fil;
+    const int ofmap_nblk  = ofmap_dep/BASE_PER_OBUS;
+    const int ofmap_size  = ofmap_wid * ofmap_ht * ofmap_dep;
+    
+    size_t fmap_Bsize = fmap_size  * sizeof(base);
+    size_t wts_Bsize  = wts_size   * sizeof(base);
+    size_t out_Bsize  = ofmap_size * sizeof(base);
+
+    std::vector<base,aligned_allocator<base>> src_fmap(fmap_size,  1);
+    std::vector<base,aligned_allocator<base>> src_wts (wts_size,   1);
+    std::vector<base,aligned_allocator<base>> src_out (ofmap_size, 0);
 
     // Creating Context and Command Queue for selected device
     cl::Context context(device);
@@ -137,29 +166,32 @@ int main(int argc, char* argv[]) {
     q.enqueueMigrateMemObjects({buf_fmap,buf_out}, 0); /* 0 means from host*/
     q.finish();
     //set the kernel Arguments
-    krnl_load_fmap.setArg(0, buf_fmap); // fmap ptr
-    krnl_load_fmap.setArg(1, 28      ); // fmap_wid
-    krnl_load_fmap.setArg(2, 28      ); // fmap_ht
-    krnl_load_fmap.setArg(3, 2       ); // fmap_blk
-    krnl_load_fmap.setArg(4, 3       ); // fil_wid
-    krnl_load_fmap.setArg(5, 3       ); // fil_ht
-    krnl_load_fmap.setArg(6, 1       ); // padding
-    krnl_load_fmap.setArg(7, 2       ); // stride
-    krnl_load_fmap.setArg(8, 1       ); // niter 
+    krnl_load_fmap.setArg(0, buf_fmap   ); // fmap ptr
+    krnl_load_fmap.setArg(1, fmap_wid   ); // fmap_wid
+    krnl_load_fmap.setArg(2, fmap_ht    ); // fmap_ht
+    krnl_load_fmap.setArg(3, fmap_nblk  ); // fmap_nblk
+    krnl_load_fmap.setArg(4, fil_wid    ); // fil_wid
+    krnl_load_fmap.setArg(5, fil_ht     ); // fil_ht
+    krnl_load_fmap.setArg(6, padding    ); // padding
+    krnl_load_fmap.setArg(7, conv_stride); // stride
+    krnl_load_fmap.setArg(8, n_iter     ); // niter 
 
-    krnl_load_wts.setArg(0, buf_wts    );
-    krnl_load_wts.setArg(1, WTS_SIZE/16);
+    const int wts_ddr_size = wts_size/BASE_PER_DDRBUS;
+    krnl_load_wts.setArg(0, buf_wts     );
+    krnl_load_wts.setArg(1, wts_ddr_size);
 
-    krnl_conv.setArg(0, 14   ); // o_wid
-    krnl_conv.setArg(1, 14   ); // o_ht 
-    krnl_conv.setArg(2, 1    ); // o_blk
-    krnl_conv.setArg(3, 16   ); // n_fil
-    krnl_conv.setArg(4, 3*3*2); // fil_size
-    krnl_conv.setArg(5, 1    ); // n_iter
+    const int fil_out_size = fil_size/BASE_PER_OBUS;
+    krnl_conv.setArg(0, ofmap_wid   ); // o_wid
+    krnl_conv.setArg(1, ofmap_ht    ); // o_ht 
+    krnl_conv.setArg(2, ofmap_nblk  ); // o_blk
+    krnl_conv.setArg(3, num_fil     ); // n_fil
+    krnl_conv.setArg(4, fil_out_size); // fil_size
+    krnl_conv.setArg(5, n_iter      ); // n_iter
 
-    krnl_output.setArg(0, buf_out ); // o_fmap ptr
-    krnl_output.setArg(1, 3*3*2   ); // fil_size
-    krnl_output.setArg(2, 14 * 14 ); // o_size
+    const int ofmap_out_size = ofmap_size/BASE_PER_OBUS;
+    krnl_output.setArg(0, buf_out       ); // o_fmap ptr
+    krnl_output.setArg(1, fil_out_size  ); // fil_size
+    krnl_output.setArg(2, ofmap_out_size); // o_size
     // Launch the Kernel
     struct timespec start, end;
     double time;
@@ -188,11 +220,11 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Verifying results..." << std::endl;
     bool match = true;
-    for (int i=0;i<OUT_FMAP_SIZE;i++){
+    for (int i=0;i<ofmap_size;i++){
       if (src_out[i] != 288 && src_out[i] != 128 && src_out[i] != 192){
         match = false;  
-        std::cout << i << ": "<< src_out[i] << std::endl;
-        //break;
+        std::cout << "src_out["<< i << "] =  "<< src_out[i] << std::endl;
+        break;
       }
       else {
         //std::cout << i << ": "<< src_out[i] << std::endl;

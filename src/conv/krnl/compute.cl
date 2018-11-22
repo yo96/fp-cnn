@@ -12,11 +12,13 @@ __kernel
 void compute( 
   int o_wid,
   int o_ht,
-  int o_blk,
+  int o_nblk,
   int n_fil,
   int fil_size, // in wts_bus_
   int n_iter ) 
 {
+  bool debug = false;
+
   // On-chip storage
   wts_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
   __attribute__((xcl_array_partition(complete, 1)))
@@ -70,19 +72,19 @@ void compute(
             // feed fmap into shreg
             fmap_bus fbus;
             read_pipe_block(pipe_fmap, &fbus.bus_val);
-            if(x==0 && y==0 && f==8){
-              //printf("[comp]: fmap->shreg:");                  
+            if(debug && x==0 && y==0 && f==8){
+              printf("[comp]: fmap->shreg:");                  
             }
             __attribute__((opencl_unroll_hint))
             for (int i=0,j=0,nreg=0;j<SYS_WID;i+=nreg,j++){
               nreg ++;
               shreg_fmap[i] = fbus.vec[j];
-              if(x==0 && y==0 && f==8){
-                //printf(" %d->shreg[%d]", fmap_base[j],i);                  
+              if(debug && x==0 && y==0 && f==8){
+                printf(" %d->shreg[%d]", fbus.vec[j],i);                  
               }
             }
-            if(x==0 && y==0 && f==8){
-                //printf("\n");                  
+            if(debug && x==0 && y==0 && f==8){
+                printf("\n");                  
             }
             // feed wts into shreg
             __attribute__((opencl_unroll_hint))
@@ -112,8 +114,8 @@ void compute(
                 for (int i=shreg_idx+nreg,j=sc+1,nr=nreg;j<SYS_WID;i+=nr,j++){
                   nr ++;
                   shreg_fmap[i+sc+1] = shreg_fmap[i+sc];
-                  if(x==0 && y==0 && f==8){
-                    //printf("sc:%d ,%d<=%d\n",sc, i+sc+1, i+sc);                  
+                  if(debug && x==0 && y==0 && f==8){
+                    printf("sc:%d ,%d<=%d\n",sc, i+sc+1, i+sc);                  
                   }
                 } // nreg
                 fmap_val = shreg_fmap[shreg_idx+nreg-1];
@@ -126,8 +128,8 @@ void compute(
                 wts_val = shreg_wts[sr][shreg_idx+nreg-1];
 
                 // MAC
-                if(x==0 && y==0 && f==8){
-                  //printf("[comp]: sys(%d,%d), fmap:%d, wts:%d, acc:%d\n",sr,sc,fmap_val, wts_val, acc);                  
+                if(debug && x==0 && y==0 && f==8){
+                  printf("[comp]: sys(%d,%d), fmap:%d, wts:%d, acc:%d\n",sr,sc,fmap_val, wts_val, acc);                  
                 }
                 sys[sr][sc] = fmap_val * wts_val + acc;
                 shreg_idx += nreg;
@@ -147,5 +149,5 @@ void compute(
     } // o_ht
     //printf("comp: %d-th iteration.\n", ni);
   } // n_iter
-  printf("comp: done\n");
+  printf("[comp]: done\n");
 }

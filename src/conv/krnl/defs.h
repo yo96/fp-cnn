@@ -1,8 +1,9 @@
-#define BASE_PER_DDRBUS 16
+#define BASE_PER_DDRBUS 32
 #define BASE_PER_FBUS   16
 #define BASE_PER_WBUS   BASE_PER_FBUS
 #define BASE_PER_OBUS   BASE_PER_FBUS
-#define FBUS_PER_DDRBUS 1
+
+#define FBUS_PER_DDRBUS BASE_PER_DDRBUS/BASE_PER_FBUS
 #define WBUS_PER_DDRBUS FBUS_PER_DDRBUS
 #define OBUS_PER_DDRBUS FBUS_PER_DDRBUS
 
@@ -11,16 +12,16 @@
 #define NUM_FIL_BUF     BASE_PER_OBUS
 #define SYS_WID         BASE_PER_FBUS
 #define SYS_HT          BASE_PER_OBUS
-#define FIL_BUF_SIZE    25
+#define FIL_BUF_SIZE    50
 
 /*****************************************************************************
  *  Data types 
  *****************************************************************************/
 
-typedef int     base;
 typedef int16   ddr_bus_t;
-typedef int16   fmap_bus_t;
-typedef int16   out_bus_t;
+typedef short   base;
+typedef short16 fmap_bus_t;
+typedef short16 out_bus_t;
 
 typedef union {
   base    vec[BASE_PER_DDRBUS];

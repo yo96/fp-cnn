@@ -3,7 +3,7 @@
 #include "defs.h"
 
 #define BUFFER_SIZE 28 * 28 * 2
-
+#define TWO 2
 /******************************************************************************
  * load_fmap
  ******************************************************************************
@@ -23,6 +23,9 @@ void load_fmap(
                  int  stride,
                  int  n_iter    )
 {
+  bool debug_refill = false;
+  bool debug_feed   = false;
+
   ddr_bus    from_ddr;
   fmap_bus   to_pipe;
   fmap_bus_t tile_buf[BUFFER_SIZE]
@@ -32,7 +35,8 @@ void load_fmap(
   int Y = fmap_ht  + padding*2 - fil_ht  + 1;
   int off_x = (fil_wid-1) / 2;
   int off_y = (fil_ht -1) / 2;
-  int blk_db_size = (fmap_ht * fmap_wid)/FBUS_PER_DDRBUS;
+  int fpd = FBUS_PER_DDRBUS; // can't drectly divide by FBUS_PER_DDRBUS??
+  int blk_db_size = (fmap_ht * fmap_wid)/ fpd;
   int blk_fb_size = (fmap_ht * fmap_wid);
 
   for (int ni=0; ni<n_iter; ni++){
@@ -52,7 +56,15 @@ void load_fmap(
           for (int k=0;k<BASE_PER_FBUS;k++){
             to_buf.vec[k] = from_ddr.vec[k+j*BASE_PER_FBUS];
           } // k < BASE_PER_FBUS
-          tile_buf[j+i*FBUS_PER_DDRBUS+off_tile] = to_buf.bus_val;
+          int tb_addr = j+i*FBUS_PER_DDRBUS+off_tile;
+          if (debug_refill){
+            printf("tile_buf[%d]<- ", tb_addr);
+            for (int d=0;d<BASE_PER_FBUS;d++){
+              printf("%d, ",to_buf.vec[d]);
+            }
+            printf("\n");
+          }
+          tile_buf[tb_addr] = to_buf.bus_val;
         } // j < FBUS_PER_DDRBUS
 
       } // i < blk_db_Size
@@ -78,13 +90,21 @@ void load_fmap(
                 to_pipe.bus_val = tile_buf[rd_addr];
                 //printf("[load](%d,%d)%d: feeding fmap[%d] to pipe\n",x,y,c+r*fil_wid,rd_addr);
               }
+              if (debug_feed){
+                printf("%d (%d,%d,%d): ",x_addr + y_addr*fmap_wid + blk_offset, y_addr, x_addr, nb);
+                for (int i=0;i<BASE_PER_FBUS;i++){
+                  printf("%d, ",to_pipe.vec[i]);
+                }
+                printf("\n");
+              }
               write_pipe_block(pipe_fmap, &to_pipe.bus_val);
             } // fil_wid
           } // fil_ht
         } // nb < fmap_nblk
+        if (debug_feed) printf("\n");
       } // X 
     } // Y
 
   } // n_iter
-  //printf("[load_fmap]: DONE\n");
+  printf("[load_fmap]: DONE\n");
 }
