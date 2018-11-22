@@ -1,6 +1,7 @@
 //#include "ap_int.h"
 //#include "def_helper.h"
 #include "defs.h"
+#include "configs.h"
 //#define N_NUM_PER_BUS 16
 
 __attribute__((reqd_work_group_size(1,1,1)))

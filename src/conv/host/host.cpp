@@ -2,10 +2,10 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
-#include "allocator.h"
 #include <CL/cl_ext.h>
 #include <math.h>
-
+#include "allocator.h"
+#include "krnl/configs.h"
 //TARGET_DEVICE macro needs to be passed from gcc command line
 #if defined(SDX_PLATFORM) && !defined(TARGET_DEVICE)
     #define STR_VALUE(arg)      #arg
@@ -15,15 +15,6 @@
 
 #define BILLION 1000000000L
 // assumes a square systolic array
-#define BASE_PER_DDRBUS 32
-#define BASE_PER_FBUS   16
-#define BASE_PER_WBUS   BASE_PER_FBUS
-#define BASE_PER_OBUS   BASE_PER_FBUS
-#define FBUS_PER_DDRBUS BASE_PER_DDRBUS/BASE_PER_FBUS
-#define WBUS_PER_DDRBUS FBUS_PER_DDRBUS
-#define OBUS_PER_DDRBUS FBUS_PER_DDRBUS
-
-#define NUM_FIL_BUF 16 // number of on-chip filter buffers
 typedef short base;
 
 static const std::string error_message =

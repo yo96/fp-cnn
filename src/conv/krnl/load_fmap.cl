@@ -1,6 +1,7 @@
 //#include "ap_int.h"
 //#include "def_helper.h"
 #include "defs.h"
+#include "configs.h"
 
 #define BUFFER_SIZE 28 * 28 * 2
 #define TWO 2
