@@ -1,6 +1,6 @@
 #include "defs.h"
 
-#define DEBUG_LOAD_FMAP 0
+#define DEBUG_LOAD_FMAP 1
 
 /******************************************************************************
  ** load_fmap
@@ -78,9 +78,11 @@ void load_fmap(
         // sure the buffer is big enough so the last write is not out of
         // range. 
         int condOffsetH_LU = ( tileH == 0 ) ? upadding : 0;
+        int condOffsetH_LD = ( tileH+tile_ht > fmap_ht-dpadding ) ? dpadding : 0;
         int condOffsetW_LU = ( tileW == 0 ) ? lpadding : 0;
-        int tileDataH = tile_ht  - condOffsetH_LU;
-        int tileDataW = tile_wid - condOffsetW_LU;
+        int condOffsetW_RU = ( tileW+tile_wid > fmap_wid-rpadding ) ? rpadding : 0;
+        int tileDataH = tile_ht  - condOffsetH_LU - condOffsetH_LD;
+        int tileDataW = tile_wid - condOffsetW_LU - condOffsetW_RU;
         if ( DEBUG_LOAD_FMAP ) {
           printf("load_fmap(): For tile at ( %d, %d )\n", tileH, tileW );
           printf("load_fmap(): Trying to read from DDR into tile buffer...\n");
@@ -112,7 +114,7 @@ void load_fmap(
                 // the coordinate of this piece of data in the tile buffer
                 int tileDataY = inTileY - condOffsetH_LU;
                 int tileDataX = inTileX - condOffsetW_LU;
-                int tileAddr = tileDataY * tileDataW + tileDataX;
+                int tileAddr = nBlk * tileDataH * tileDataW + tileDataY * tileDataW + tileDataX;
 
                 if ( DEBUG_LOAD_FMAP ) {
                   printf("load_fmap(): RD from DDR at [%d] ( addr=%d, offset=%d )\n",
@@ -133,13 +135,23 @@ void load_fmap(
                     to_tile_buf[ i ].vec[j]
                       = from_ddr.vec[ i*BASE_PER_FBUS+j ];
                   }
-                  tile_buffer[ tileAddr+i*FBUS_PER_DDRBUS+nBlk ].bus_val
-                    = to_tile_buf[ i ].bus_val;
+                  /*tile_buffer[ tileAddr+i*FBUS_PER_DDRBUS+nBlk ].bus_val*/
+                    /*= to_tile_buf[ i ].bus_val;*/
+                  tile_buffer[ tileAddr + i*FBUS_PER_DDRBUS ].bus_val = 
+                    to_tile_buf[ i ].bus_val;
+                  printf("tile_buf[%d] written, tileDataY = %d, tileDataX = %d, tileDataW = %d\n", tileAddr+i*FBUS_PER_DDRBUS, tileDataY, tileDataX, tileDataW);
                 }
               }
             }
           }
         }
+        for ( int i = 0; i < TILE_BUF_SIZE; i++ ) 
+          if ( tile_buffer[ i ].vec[0] != 1 ) {
+            printf("load_fmap(): sanity check failed. tile_buf[%d]=",i);
+            for ( int j = 0; j < BASE_PER_FBUS; j++ )
+              printf("%d ", tile_buffer[i].vec[j]);
+            printf("\n");
+          }
         if ( DEBUG_LOAD_FMAP ) {
           printf("load_fmap(): Trying to feed data into pipe_fmap...\n");
         }
@@ -148,9 +160,11 @@ void load_fmap(
           for ( int pfX = 0; pfX < tile_wid-pfW+1; pfX += pool_stride*stride ) {
             for ( int pwY = 0; pwY < pool_ht; pwY++ ) {
               for ( int pwX = 0; pwX < pool_wid; pwX++ ) {
-                for ( int filY = 0; filY < fil_ht; filY++ ) {
-                  for ( int filX = 0; filX < fil_wid; filX++ ) {
-                    for ( int nBlk = 0; nBlk < fmap_nblk; nBlk++ ) {
+                for ( int nBlk = 0; nBlk < fmap_nblk; nBlk++ ) {
+                  for ( int filY = 0; filY < fil_ht; filY++ ) {
+                    for ( int filX = 0; filX < fil_wid; filX++ ) {
+                      // add a new dimension: FBUS_PER_OBUS
+
                       // the coordinate inside the current tile
                       int inTileY = pfY + pwY * stride + filY;
                       int inTileX = pfX + pwX * stride + filX;
