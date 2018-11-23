@@ -1,4 +1,4 @@
-#define BASE_PER_DDRBUS 16
+#define BASE_PER_DDRBUS 32
 #define BASE_PER_FBUS   16
 #define BASE_PER_FBUS   16
 #define BASE_PER_WBUS   BASE_PER_FBUS
@@ -17,10 +17,13 @@
  *  Data types 
  *****************************************************************************/
 
-typedef int   base;
+typedef short   base;
+//typedef int   base;
 typedef int16 ddr_bus_t;
-typedef int16 fmap_bus_t;
-typedef int16 out_bus_t;
+typedef short16 fmap_bus_t;
+typedef short16 out_bus_t;
+//typedef int16 fmap_bus_t;
+//typedef int16 out_bus_t;
 
 typedef union {
   base    vec[BASE_PER_DDRBUS];

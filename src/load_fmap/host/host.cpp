@@ -67,17 +67,22 @@ int main(int argc, char* argv[]) {
      ************************************************************************/
     // Set it to be 4KB so that hw_emu run faster. 
     // Change this to a large number when running on board
-    const int IN_FMAP_SIZE  = 28 * 28 * 16;
+    const int IN_FMAP_SIZE  = 28 * 28 * 32;
     const int OUT_FMAP_SIZE = 28 * 28 * 16;
     
-    size_t fmap_Bsize = IN_FMAP_SIZE  * sizeof(int);
-    size_t out_Bsize  = OUT_FMAP_SIZE * sizeof(int);
+    size_t fmap_Bsize = IN_FMAP_SIZE  * sizeof(short);
+    size_t out_Bsize  = OUT_FMAP_SIZE * sizeof(short);
 
-    std::vector<int,aligned_allocator<int>> src_fmap(IN_FMAP_SIZE,  0);
+    //size_t fmap_Bsize = IN_FMAP_SIZE  * sizeof(int);
+    //size_t out_Bsize  = OUT_FMAP_SIZE * sizeof(int);
+
+    std::vector<short,aligned_allocator<short>> src_fmap(IN_FMAP_SIZE,  0);
+    //std::vector<int,aligned_allocator<int>> src_fmap(IN_FMAP_SIZE,  0);
     // channel-major storage
     for ( size_t i = 0; i < src_fmap.size(); i++ )
       src_fmap[ i ] = i;
-    std::vector<int,aligned_allocator<int>> src_out (OUT_FMAP_SIZE, -1);
+    std::vector<short,aligned_allocator<short>> src_out (OUT_FMAP_SIZE, -1);
+    //std::vector<int,aligned_allocator<int>> src_out (OUT_FMAP_SIZE, -1);
 
     // Creating Context and Command Queue for selected device
     cl::Context context(device);
@@ -155,26 +160,26 @@ int main(int argc, char* argv[]) {
                  //int  n_iter    )
 
     krnl_load_fmap.setArg( 0, buf_fmap); // fmap ptr
-    krnl_load_fmap.setArg( 1, 7      ); // fmap_wid
-    krnl_load_fmap.setArg( 2, 7      ); // fmap_ht
+    krnl_load_fmap.setArg( 1, 28      ); // fmap_wid
+    krnl_load_fmap.setArg( 2, 28      ); // fmap_ht
     krnl_load_fmap.setArg( 3, 1       ); // fmap_nblk
-    krnl_load_fmap.setArg( 4, 4       ); // fil_wid
-    krnl_load_fmap.setArg( 5, 4       ); // fil_ht
-    krnl_load_fmap.setArg( 6, 6      ); // tile_wid
-    krnl_load_fmap.setArg( 7, 6      ); // tile_ht
+    krnl_load_fmap.setArg( 4, 3       ); // fil_wid
+    krnl_load_fmap.setArg( 5, 3       ); // fil_ht
+    krnl_load_fmap.setArg( 6, 30      ); // tile_wid
+    krnl_load_fmap.setArg( 7, 30      ); // tile_ht
     krnl_load_fmap.setArg( 8, 1       ); // tile_nblk
     krnl_load_fmap.setArg( 9, 1       ); // lpadding
-    krnl_load_fmap.setArg(10, 2       ); // rpadding
+    krnl_load_fmap.setArg(10, 1       ); // rpadding
     krnl_load_fmap.setArg(11, 1       ); // upadding
-    krnl_load_fmap.setArg(12, 2       ); // dpadding
-    krnl_load_fmap.setArg(13, 2      ); // pool_wid
-    krnl_load_fmap.setArg(14, 2       ); // pool_ht
-    krnl_load_fmap.setArg(15, 2       ); // pool_stride
-    krnl_load_fmap.setArg(16, 2       ); // stride
-    krnl_load_fmap.setArg(17, 2       ); // niter 
+    krnl_load_fmap.setArg(12, 1       ); // dpadding
+    krnl_load_fmap.setArg(13, 1      ); // pool_wid
+    krnl_load_fmap.setArg(14, 1       ); // pool_ht
+    krnl_load_fmap.setArg(15, 1       ); // pool_stride
+    krnl_load_fmap.setArg(16, 1       ); // stride
+    krnl_load_fmap.setArg(17, 1       ); // niter 
 
     // niter * output size * filter size
-    krnl_output.setArg(0, 2*4*4*4*4 ); // o_size
+    krnl_output.setArg(0, 1*28*28*3*3*1 ); // o_size
     // Launch the Kernel
     struct timespec start, end;
     double time;
