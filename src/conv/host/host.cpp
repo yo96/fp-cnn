@@ -66,48 +66,6 @@ int main(int argc, char* argv[]) {
        return EXIT_FAILURE; 
     }
 
-    /************************************************************************* 
-     * HOST CODE AREA  
-     ************************************************************************/
-    const int fmap_wid  = 28;
-    const int fmap_ht   = 28;
-    const int fmap_dep  = 32;
-    const int fmap_size = fmap_wid * fmap_ht * fmap_dep;
-    const int fmap_nblk = fmap_dep/BASE_PER_FBUS;
-
-    const int num_fil  = 16;
-    const int fil_ht   = 3;
-    const int fil_wid  = 3;
-    const int fil_dep  = fmap_dep;
-    const int fil_size = fil_wid * fil_ht * fil_dep;
-    const int wts_size = fil_size * num_fil;
-
-    const int conv_stride = 1;
-    const int padding  = 1; // to be changed 
-    const int n_iter   = num_fil/NUM_FIL_BUF;
-
-    const int ofmap_wid   = ceil( (float)(fmap_wid)/conv_stride );
-    const int ofmap_ht    = ceil( (float)(fmap_ht )/conv_stride );
-    const int ofmap_dep   = num_fil;
-    const int ofmap_nblk  = ofmap_dep/BASE_PER_OBUS;
-    const int ofmap_size  = ofmap_wid * ofmap_ht * ofmap_dep;
-    
-    size_t fmap_Bsize = fmap_size  * sizeof(base);
-    size_t wts_Bsize  = wts_size   * sizeof(base);
-    size_t out_Bsize  = ofmap_size * sizeof(base);
-
-    std::vector<base,aligned_allocator<base>> src_fmap(fmap_size,  1);
-    std::vector<base,aligned_allocator<base>> src_wts (wts_size,   1);
-    std::vector<base,aligned_allocator<base>> src_out (ofmap_size, 0);
-    std::vector<base,aligned_allocator<base>> ref     (ofmap_size, 0);
-
-    // Get CPU result
-    test_conv<base>(src_fmap.data(), src_wts.data(), ref.data(),
-              fmap_wid, fmap_ht, fmap_dep,
-              fil_wid,  fil_ht, num_fil,
-              conv_stride, padding );
-
-
     // Creating Context and Command Queue for selected device
     cl::Context context(device);
     cl::CommandQueue q(context, device, CL_QUEUE_PROFILING_ENABLE | 
@@ -135,6 +93,61 @@ int main(int argc, char* argv[]) {
     cl::Kernel krnl_conv     (program, "compute"  );
     cl::Kernel krnl_output   (program, "load_out" );    
     
+
+    /************************************************************************* 
+     * HOST CODE AREA  
+     ************************************************************************/
+    const int fmap_wid  = 7;
+    const int fmap_ht   = 7;
+    const int fmap_dep  = 32;
+    //const int fmap_size = fmap_wid * fmap_ht * fmap_dep;
+    // calculate aligned size for a fmap
+    const int fmap_nblk = fmap_dep/BASE_PER_OBUS;
+    //const int blk_dep   = fmap_dep/BASE_PER_FBUS;
+    const int row_ddr_size = ceil( (float)(fmap_wid * BASE_PER_OBUS)/BASE_PER_DDRBUS ); 
+    const int fmap_size = row_ddr_size * BASE_PER_DDRBUS * fmap_ht * fmap_nblk;
+
+    const int num_fil  = 32;
+    const int fil_ht   = 3;
+    const int fil_wid  = 3;
+    const int fil_dep  = fmap_dep;
+    const int fil_size = fil_wid * fil_ht * fil_dep;
+    // calculate aligned size of a filter
+    const int fil_ddr_size = ceil( (float)(fil_size)/BASE_PER_DDRBUS );
+    const int fil_ailgned_size = fil_ddr_size * BASE_PER_DDRBUS;
+    const int wts_size = fil_ailgned_size * num_fil;
+
+    const int conv_stride = 1;
+    const int padding  = 1; // to be changed 
+    const int n_iter   = num_fil/NUM_FIL_BUF;
+
+    const int ofmap_wid   = ceil( (float)(fmap_wid)/conv_stride );
+    const int ofmap_ht    = ceil( (float)(fmap_ht )/conv_stride );
+    const int ofmap_dep   = num_fil;
+    const int ofmap_nblk  = ofmap_dep/BASE_PER_OBUS;
+    const int ofmap_size  = ofmap_wid * ofmap_ht * ofmap_dep;
+    
+    size_t fmap_Bsize = fmap_size  * sizeof(base);
+    size_t wts_Bsize  = wts_size   * sizeof(base);
+    size_t out_Bsize  = ofmap_size * sizeof(base);
+
+    std::vector<base,aligned_allocator<base>> src_fmap(fmap_size,  1);
+    std::vector<base,aligned_allocator<base>> src_wts (wts_size,   1);
+    std::vector<base,aligned_allocator<base>> src_out (ofmap_size, 0);
+    std::vector<base,aligned_allocator<base>> ref     (ofmap_size, 0);
+
+    // Initiallize fmap
+    for (int i=0;i<fmap_size;i++)
+      src_fmap[i] = (rand() % 10) - 6;
+
+    for (int i=0;i<wts_size;i++)
+      src_wts[i] = (rand() %10) - 5;
+    // Get CPU result
+    test_conv<base>(src_fmap.data(), src_wts.data(), ref.data(),
+              fmap_wid, fmap_ht, fmap_dep,
+              fil_wid,  fil_ht, num_fil,
+              conv_stride, padding );
+
     // produces weird bugs if using multiple DDR...
     //cl_mem_ext_ptr_t ext_a;
     //ext_a.flags = XCL_MEM_DDR_BANK0;
@@ -156,7 +169,7 @@ int main(int argc, char* argv[]) {
                         fmap_Bsize, src_fmap.data(), NULL);
     cl::Buffer buf_wts (context, CL_MEM_USE_HOST_PTR  | CL_MEM_READ_ONLY,
                         wts_Bsize,  src_wts.data(), NULL);
-    cl::Buffer buf_out(context, CL_MEM_USE_HOST_PTR   | CL_MEM_WRITE_ONLY,
+    cl::Buffer buf_out (context, CL_MEM_USE_HOST_PTR  | CL_MEM_WRITE_ONLY,
                         out_Bsize,  src_out.data(), NULL);
 
     
@@ -219,27 +232,28 @@ int main(int argc, char* argv[]) {
     q.finish();
 
     std::cout << "Verifying results..." << std::endl;
+    //for (int i=0;i<ofmap_size;i++){
+    //  if (src_out[i] != 288 && src_out[i] != 128 && src_out[i] != 192){
+    //    match = false;  
+    //    std::cout << "src_out["<< i << "] =  "<< src_out[i] << std::endl;
+    //    break;
+    //  }
+    //  else {
+    //    //std::cout << i << ": "<< src_out[i] << std::endl;
+    //  }
+    //}
+
     bool match = true;
-    for (int i=0;i<ofmap_size;i++){
-      if (src_out[i] != 288 && src_out[i] != 128 && src_out[i] != 192){
-        match = false;  
-        std::cout << "src_out["<< i << "] =  "<< src_out[i] << std::endl;
-        break;
-      }
-      else {
-        //std::cout << i << ": "<< src_out[i] << std::endl;
-      }
-    }
-
-    std::cout << "Test " << (match ? "passed!" : "failed...") << std::endl;
-
+    match = true;
     std::cout << "Comparing CPU resutls..." << std::endl;
     for (int i=0;i<ofmap_size;i++){
-      if (src_out[i] != ref[i] && i<32){
+      if (src_out[i] != ref[i]){
         std::cout << "cpu[" << i << "] = " << ref[i] 
                   << ", device[" << i << "] = " << src_out[i] << std::endl;
+        match = false;
       }
     }
+    std::cout << "Test " << (match ? "passed!" : "failed...") << std::endl;
 
     return 0;
 }

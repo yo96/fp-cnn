@@ -3,9 +3,9 @@
  *  Data types 
  *****************************************************************************/
 typedef int16   ddr_bus_t;
-typedef short   base;
-typedef short16 fmap_bus_t;
-typedef short16 out_bus_t;
+typedef short     base;
+typedef short16   fmap_bus_t;
+typedef short16   out_bus_t;
 
 typedef union {
   base    vec[BASE_PER_DDRBUS];

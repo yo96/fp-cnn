@@ -4,7 +4,8 @@
 #include "configs.h"
 
 #define BUFFER_SIZE 28 * 28 * 2
-#define TWO 2
+#define BLK_DEP BASE_PER_OBUS/BASE_PER_FBUS
+
 /******************************************************************************
  * load_fmap
  ******************************************************************************
@@ -37,38 +38,59 @@ void load_fmap(
   int off_x = (fil_wid-1) / 2;
   int off_y = (fil_ht -1) / 2;
   int fpd = FBUS_PER_DDRBUS; // can't drectly divide by FBUS_PER_DDRBUS??
-  int blk_db_size = (fmap_ht * fmap_wid)/ fpd;
-  int blk_fb_size = (fmap_ht * fmap_wid);
+  int fpo = FBUS_PER_OBUS;
+  int fmap_wid_ddr_size = (fmap_wid*fpo + fpd-1)/fpd;
+  int blk_db_size = fmap_ht * fmap_wid_ddr_size;
+  int blk_fb_size = (fmap_ht * fmap_wid * BLK_DEP);
 
   for (int ni=0; ni<n_iter; ni++){
 
     // Load whole fmap
     for (int b=0;b<fmap_nblk;b++){
-      int off_ddr  = b * blk_db_size;
-      int off_tile = b * blk_fb_size;
+      int blk_off_ddr  = b * blk_db_size;
+      int blk_off_tile = b * blk_fb_size;
 
-      for (int i=0;i<blk_db_size;i++){        
-        // read a ddr_bus from DDR
-        fmap_bus to_buf;
-        from_ddr.bus_val = fmap[i+off_ddr];          
-        
-        // decompose ddr_bus into fmap_bus and write to tile buffer
-        for (int j=0;j<FBUS_PER_DDRBUS;j++){
-          for (int k=0;k<BASE_PER_FBUS;k++){
-            to_buf.vec[k] = from_ddr.vec[k+j*BASE_PER_FBUS];
-          } // k < BASE_PER_FBUS
-          int tb_addr = j+i*FBUS_PER_DDRBUS+off_tile;
-          if (debug_refill){
-            printf("tile_buf[%d]<- ", tb_addr);
-            for (int d=0;d<BASE_PER_FBUS;d++){
-              printf("%d, ",to_buf.vec[d]);
-            }
-            printf("\n");
-          }
-          tile_buf[tb_addr] = to_buf.bus_val;
-        } // j < FBUS_PER_DDRBUS
+      for (int y=0;y<fmap_ht;y++){
+        // Each row is 64B aligned
+        int tileAddr = y*fmap_wid + blk_off_tile;
+        for (int x=0;x<fmap_wid_ddr_size;x++){
 
-      } // i < blk_db_Size
+          int y_offset = y*fmap_wid_ddr_size;
+          from_ddr.bus_val = fmap[x+y_offset+blk_off_ddr];
+          // Decompese ddr_bus into fmap_bus and write to tile buffer
+          fmap_bus to_buf;
+          for (int j=0;j<FBUS_PER_DDRBUS;j++){
+            for (int k=0;k<BASE_PER_FBUS;k++){
+              to_buf.vec[k] = from_ddr.vec[k+j*BASE_PER_FBUS];
+            } // k < BASE_PER_FBUS
+            tile_buf[tileAddr+j] = to_buf.bus_val;
+          } // FBUS_PER_DDRBUS
+          tileAddr += FBUS_PER_DDRBUS;
+        } // x < fmap_wid_ddr_size
+      }
+
+      //for (int i=0;i<blk_db_size;i++){        
+      //  // read a ddr_bus from DDR
+      //  fmap_bus to_buf;
+      //  from_ddr.bus_val = fmap[i+off_ddr];          
+      //  
+      //  // decompose ddr_bus into fmap_bus and write to tile buffer
+      //  for (int j=0;j<FBUS_PER_DDRBUS;j++){
+      //    for (int k=0;k<BASE_PER_FBUS;k++){
+      //      to_buf.vec[k] = from_ddr.vec[k+j*BASE_PER_FBUS];
+      //    } // k < BASE_PER_FBUS
+      //    int tb_addr = j+i*FBUS_PER_DDRBUS+off_tile;
+      //    if (debug_refill){
+      //      printf("tile_buf[%d]<- ", tb_addr);
+      //      for (int d=0;d<BASE_PER_FBUS;d++){
+      //        printf("%d, ",to_buf.vec[d]);
+      //      }
+      //      printf("\n");
+      //    }
+      //    tile_buf[tb_addr] = to_buf.bus_val;
+      //  } // j < FBUS_PER_DDRBUS
+      //} // i < blk_db_Size
+
     } // b < fmap_nblk
 
     // Feed the pipe
@@ -79,26 +101,28 @@ void load_fmap(
           int blk_offset = nb * blk_fb_size;   
           for (int r=0;r<fil_ht;r++){
             for (int c=0;c<fil_wid;c++){
-              int x_addr = x - off_x + c;
-              int y_addr = y - off_y + r;
-              
-              if (x_addr<0 || x_addr>fmap_wid-1 || y_addr<0 || y_addr>fmap_ht-1){
-                to_pipe.bus_val = 0; //padding
-                //printf("[load](%d,%d)%d: feeding 0-padding to pipe\n",x,y,c+r*fil_wid);              
-              }
-              else {
-                int rd_addr = x_addr + y_addr*fmap_wid + blk_offset;
-                to_pipe.bus_val = tile_buf[rd_addr];
-                //printf("[load](%d,%d)%d: feeding fmap[%d] to pipe\n",x,y,c+r*fil_wid,rd_addr);
-              }
-              if (debug_feed){
-                printf("%d (%d,%d,%d): ",x_addr + y_addr*fmap_wid + blk_offset, y_addr, x_addr, nb);
-                for (int i=0;i<BASE_PER_FBUS;i++){
-                  printf("%d, ",to_pipe.vec[i]);
+              for (int d=0;d<BLK_DEP;d++){
+                int x_addr = x - off_x + c;
+                int y_addr = y - off_y + r;
+                
+                if (x_addr<0 || x_addr>fmap_wid-1 || y_addr<0 || y_addr>fmap_ht-1){
+                  to_pipe.bus_val = 0; //padding
+                  //printf("[load](%d,%d)%d: feeding 0-padding to pipe\n",x,y,c+r*fil_wid);              
                 }
-                printf("\n");
-              }
-              write_pipe_block(pipe_fmap, &to_pipe.bus_val);
+                else {
+                  int rd_addr = d + x_addr*BLK_DEP + y_addr*fmap_wid*BLK_DEP + blk_offset;
+                  to_pipe.bus_val = tile_buf[rd_addr];
+                  //printf("[load](%d,%d)%d: feeding fmap[%d] to pipe\n",x,y,c+r*fil_wid,rd_addr);
+                }
+                if (debug_feed){
+                  printf("%d (%d,%d,%d): ",x_addr + y_addr*fmap_wid + blk_offset, y_addr, x_addr, nb);
+                  for (int i=0;i<BASE_PER_FBUS;i++){
+                    printf("%d, ",to_pipe.vec[i]);
+                  }
+                  printf("\n");
+                }
+                write_pipe_block(pipe_fmap, &to_pipe.bus_val);
+              } // d<BLK_DEP
             } // fil_wid
           } // fil_ht
         } // nb < fmap_nblk
