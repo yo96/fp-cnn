@@ -1,11 +1,12 @@
 #define BASE_PER_DDRBUS 16
 #define BASE_PER_FBUS   16
+#define BASE_PER_FBUS   16
 #define BASE_PER_WBUS   BASE_PER_FBUS
 #define BASE_PER_OBUS   BASE_PER_WBUS
 #define FBUS_PER_DDRBUS 1
 #define WBUS_PER_DDRBUS 1
 
-#define TILE_BUF_SIZE   28 * 28
+#define TILE_BUF_SIZE   28 * 28 * 2
 
 #define SYS_WID         BASE_PER_FBUS
 #define SYS_HT          BASE_PER_OBUS
