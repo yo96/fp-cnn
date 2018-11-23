@@ -55,7 +55,7 @@ void compute(
         } // k
       } // j - fil_size
     } // i - NUM_FIL_BUF
-    //printf("comp: wts loaded.\n");
+    printf("comp: wts loaded.\n");
 
     // iterating output fmap
     ITER_FMAP:
@@ -129,7 +129,8 @@ void compute(
 
                 // MAC
                 if(debug && x==0 && y==0 && f==8){
-                  printf("[comp]: sys(%d,%d), fmap:%d, wts:%d, acc:%d\n",sr,sc,fmap_val, wts_val, acc);                  
+                  printf("[comp]: sys(%d,%d), fmap:%d, wts:%d, acc:%d\n",
+                    sr,sc,fmap_val, wts_val, acc);                  
                 }
                 sys[sr][sc] = fmap_val * wts_val + acc;
                 shreg_idx += nreg;
@@ -138,8 +139,14 @@ void compute(
 
             // get ouput from systolic array
             out_bus obus;
-            for (int i=0;i<SYS_WID;i++){
+            for (int i=0;i<SYS_HT;i++){
               obus.vec[i] = sys[i][SYS_WID-1];
+            }
+            if (debug && x==0 && y==0 && f==8){
+              printf("compute(): writing pipe with\n    ");
+              for (int di=0;di<BASE_PER_OBUS;di++)
+                printf(" %d,", obus.vec[di]);
+              printf("\n");
             }
             write_pipe_block(pipe_out, &obus.bus_val);
             
@@ -149,5 +156,5 @@ void compute(
     } // o_ht
     //printf("comp: %d-th iteration.\n", ni);
   } // n_iter
-  printf("[comp]: done\n");
+  //printf("[comp]: done\n");
 }
