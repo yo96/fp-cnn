@@ -55,7 +55,7 @@ void compute(
         } // k
       } // j - fil_size
     } // i - NUM_FIL_BUF
-    printf("comp: wts loaded.\n");
+    //printf("comp: wts loaded.\n");
 
     // iterating output fmap
     ITER_FMAP:

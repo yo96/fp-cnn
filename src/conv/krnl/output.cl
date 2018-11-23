@@ -41,5 +41,5 @@ void load_out(
     wr_addr ++;
  
   } // o_size
-  //printf("[load_out]: DONE!\n");
+  printf("[load_out]: DONE!\n");
 }

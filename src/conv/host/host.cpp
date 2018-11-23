@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
     /************************************************************************* 
      * HOST CODE AREA  
      ************************************************************************/
-    const int fmap_wid  = 7;
-    const int fmap_ht   = 7;
+    const int fmap_wid  = 28;
+    const int fmap_ht   = 28;
     const int fmap_dep  = 32;
     //const int fmap_size = fmap_wid * fmap_ht * fmap_dep;
     // calculate aligned size for a fmap
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
 
     // Initiallize fmap
     for (int i=0;i<fmap_size;i++)
-      src_fmap[i] = (rand() % 10) - 6;
+      src_fmap[i] = (rand() % 10) - 5;
 
     for (int i=0;i<wts_size;i++)
       src_wts[i] = (rand() %10) - 5;
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
     // DDR memory.
     std::cout << "Transferring data to DDR..." << std::endl;
     q.enqueueMigrateMemObjects({buf_fmap,buf_out}, 0); /* 0 means from host*/
-    q.finish();
+    q.finish(); 
     //set the kernel Arguments
     krnl_load_fmap.setArg(0, buf_fmap   ); // fmap ptr
     krnl_load_fmap.setArg(1, fmap_wid   ); // fmap_wid
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
     krnl_load_wts.setArg(0, buf_wts     );
     krnl_load_wts.setArg(1, wts_ddr_size);
 
-    const int fil_out_size = fil_size/BASE_PER_OBUS;
+    const int fil_out_size = fil_size/BASE_PER_FBUS;
     krnl_conv.setArg(0, ofmap_wid   ); // o_wid
     krnl_conv.setArg(1, ofmap_ht    ); // o_ht 
     krnl_conv.setArg(2, ofmap_nblk  ); // o_blk
@@ -231,19 +231,19 @@ int main(int argc, char* argv[]) {
     q.enqueueMigrateMemObjects({buf_out},CL_MIGRATE_MEM_OBJECT_HOST);
     q.finish();
 
+    bool match = true;
     std::cout << "Verifying results..." << std::endl;
     //for (int i=0;i<ofmap_size;i++){
     //  if (src_out[i] != 288 && src_out[i] != 128 && src_out[i] != 192){
     //    match = false;  
     //    std::cout << "src_out["<< i << "] =  "<< src_out[i] << std::endl;
-    //    break;
+    //    //break;
     //  }
     //  else {
     //    //std::cout << i << ": "<< src_out[i] << std::endl;
     //  }
     //}
 
-    bool match = true;
     match = true;
     std::cout << "Comparing CPU resutls..." << std::endl;
     for (int i=0;i<ofmap_size;i++){
@@ -254,6 +254,6 @@ int main(int argc, char* argv[]) {
       }
     }
     std::cout << "Test " << (match ? "passed!" : "failed...") << std::endl;
-
+ 
     return 0;
 }
