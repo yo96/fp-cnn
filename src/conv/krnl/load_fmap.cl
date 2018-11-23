@@ -107,5 +107,5 @@ void load_fmap(
     } // Y
 
   } // n_iter
-  printf("[load_fmap]: DONE\n");
+  //printf("[load_fmap]: DONE\n");
 }

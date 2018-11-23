@@ -20,5 +20,5 @@ void load_wts(
     to_pipe.bus_val = wts[i];
     write_pipe_block(pipe_wts, &to_pipe.bus_val);
   }
-  printf("[load_wts]: DONE!\n");
+  //printf("[load_wts]: DONE!\n");
 }

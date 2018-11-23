@@ -15,7 +15,7 @@ HOST_EXE = bin_host
 	# Specify flags for compiler and linker 
 	# HOST_CFLAGS : compiler flags
 	# HOST_LFLAGS : linker flags
-HOST_CFLAGS =  -g -Wall -DFPGA_DEVICE -DC_KERNEL 
+HOST_CFLAGS =  -g -Wall -DFPGA_DEVICE -DC_KERNEL -I .
 HOST_CFLAGS += -DTARGET_DEVICE=\"${XDEVICE}\"
 HOST_CFLAGS += -I${XILINX_SDX}/runtime/include/1_2 -std=c++0x
 

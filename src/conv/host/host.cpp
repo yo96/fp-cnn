@@ -6,6 +6,7 @@
 #include <math.h>
 #include "allocator.h"
 #include "krnl/configs.h"
+#include "test.h"
 //TARGET_DEVICE macro needs to be passed from gcc command line
 #if defined(SDX_PLATFORM) && !defined(TARGET_DEVICE)
     #define STR_VALUE(arg)      #arg
@@ -98,6 +99,14 @@ int main(int argc, char* argv[]) {
     std::vector<base,aligned_allocator<base>> src_fmap(fmap_size,  1);
     std::vector<base,aligned_allocator<base>> src_wts (wts_size,   1);
     std::vector<base,aligned_allocator<base>> src_out (ofmap_size, 0);
+    std::vector<base,aligned_allocator<base>> ref     (ofmap_size, 0);
+
+    // Get CPU result
+    test_conv<base>(src_fmap.data(), src_wts.data(), ref.data(),
+              fmap_wid, fmap_ht, fmap_dep,
+              fil_wid,  fil_ht, num_fil,
+              conv_stride, padding );
+
 
     // Creating Context and Command Queue for selected device
     cl::Context context(device);
@@ -223,5 +232,14 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "Test " << (match ? "passed!" : "failed...") << std::endl;
+
+    std::cout << "Comparing CPU resutls..." << std::endl;
+    for (int i=0;i<ofmap_size;i++){
+      if (src_out[i] != ref[i] && i<32){
+        std::cout << "cpu[" << i << "] = " << ref[i] 
+                  << ", device[" << i << "] = " << src_out[i] << std::endl;
+      }
+    }
+
     return 0;
 }
