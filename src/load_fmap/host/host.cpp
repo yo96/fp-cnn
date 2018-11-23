@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
     krnl_load_fmap.setArg(17, 1       ); // niter 
 
     // niter * output size * filter size
-    krnl_output.setArg(0, 1*28*28*3*3*1 ); // o_size
+    krnl_output.setArg(0, 1*28*28*3*3*2 ); // o_size
     // Launch the Kernel
     struct timespec start, end;
     double time;

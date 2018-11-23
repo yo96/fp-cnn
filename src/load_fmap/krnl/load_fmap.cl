@@ -56,6 +56,7 @@ void load_fmap(
 
   ddr_bus from_ddr;
 
+  // SDAccel 2017 bug?
   int FPD = FBUS_PER_DDRBUS;
 
   // the width and height of the perception field
@@ -77,8 +78,8 @@ void load_fmap(
         // extra data will be overwritten at the next buffer write. Make 
         // sure the buffer is big enough so the last write is not out of
         // range. 
-        int actual_tile_ht = ( tileH+tHInc >= tH ) ? tile_ht-tileH : tile_ht;
-        int actual_tile_wid = ( tileW+tWInc >= tW ) ? tile_wid-tileW : tile_wid;
+        int actual_tile_ht = ( tileH+tHInc >= tH ) ? fmap_ht+lpadding+rpadding-tileH : tile_ht;
+        int actual_tile_wid = ( tileW+tWInc >= tW ) ? fmap_wid+upadding+dpadding-tileW : tile_wid;
 
         int condOffsetH_LU = ( tileH == 0 ) ? upadding : 0;
         int condOffsetH_LD = ( tileH+actual_tile_ht > fmap_ht-dpadding ) ? dpadding : 0;
@@ -120,7 +121,9 @@ void load_fmap(
                 int tileDataY = inTileY - condOffsetH_LU;
                 int tileDataX = inTileX - condOffsetW_LU;
                 int tileAddr = nBlk * tileDataH * tileDataW + tileDataY * tileDataW + tileDataX;
-                inTileXInc = FBUS_PER_DDRBUS;
+                // OPD because each block has the same depth as OBUS
+                // FPD/FPO = OPD
+                inTileXInc = OBUS_PER_DDRBUS;
 
                 if ( DEBUG_LOAD_FMAP ) {
                   printf("load_fmap(): RD from DDR at [%d] ( addr=%d, offset=%d )\n",
@@ -174,50 +177,54 @@ void load_fmap(
                   printf("==================================\n");
                   for ( int filY = 0; filY < fil_ht; filY++ ) {
                     for ( int filX = 0; filX < fil_wid; filX++ ) {
-                      // add a new dimension: FBUS_PER_OBUS
+                      // a new dimension: FBUS_PER_OBUS
+                      // follow channel-major way to write data
+                      for ( int fpo = 0; fpo < FBUS_PER_OBUS; fpo++ ) {
 
-                      // the coordinate inside the current tile
-                      int inTileY = pfY + pwY * stride + filY;
-                      int inTileX = pfX + pwX * stride + filX;
-                      // the actual coordinate ( fmapX, fmapY ) of the feature maps
-                      int fmapY = tileH + inTileY - upadding;
-                      int fmapX = tileW + inTileX - lpadding;
-
-                      if ( DEBUG_LOAD_FMAP ) {
-                        printf("load_fmap(): FD: In-tile coordinate: ( %d, %d )\n",
-                            inTileY, inTileX );
-
-                        printf("load_fmap(): FD: Fmap coordinate: ( %d, %d )\n",
-                            fmapY, fmapX );
-                      }
-
-                      // only load unpadded data from feature maps
-                      if ( fmapX >= 0 && fmapX < fmap_wid && fmapY >= 0 && fmapY < fmap_ht ) {
-                        // the coordinate of this piece of data in the tile buffer
-                        int tileDataY = inTileY - condOffsetH_LU;
-                        int tileDataX = inTileX - condOffsetW_LU;
-                        int tileAddr = tileDataY * tileDataW + tileDataX;
+                        // the coordinate inside the current tile
+                        int inTileY = pfY + pwY * stride + filY;
+                        int inTileX = pfX + pwX * stride + filX;
+                        // the actual coordinate ( fmapX, fmapY ) of the feature maps
+                        int fmapY = tileH + inTileY - upadding;
+                        int fmapX = tileW + inTileX - lpadding;
 
                         if ( DEBUG_LOAD_FMAP ) {
-                          printf("load_fmap(): RD from tile_buf[%d]\n", tileAddr+nBlk);
+                          printf("load_fmap(): FD: In-tile coordinate: ( %d, %d )\n",
+                              inTileY, inTileX );
+
+                          printf("load_fmap(): FD: Fmap coordinate: ( %d, %d )\n",
+                              fmapY, fmapX );
                         }
 
-                        to_pipe.bus_val = tile_buffer[ tileAddr+nBlk ].bus_val;
-                      } else {
-                        // feed 0 into the pipe
-                        if ( DEBUG_LOAD_FMAP ) {
-                          printf("load_fmap(): feed 0 padding to pipe\n" );
+                        // only load unpadded data from feature maps
+                        if ( fmapX >= 0 && fmapX < fmap_wid && fmapY >= 0 && fmapY < fmap_ht ) {
+                          // the coordinate of this piece of data in the tile buffer
+                          int tileDataY = inTileY - condOffsetH_LU;
+                          int tileDataX = inTileX - condOffsetW_LU;
+                          // Bug fix: data from different blocks go to different blocks
+                          int tileAddr = nBlk * tileDataH * tileDataW + tileDataY * tileDataW + tileDataX;
+
+                          if ( DEBUG_LOAD_FMAP ) {
+                            printf("load_fmap(): RD from tile_buf[%d]\n", tileAddr+fpo);
+                          }
+
+                          to_pipe.bus_val = tile_buffer[ tileAddr+fpo ].bus_val;
+                        } else {
+                          // feed 0 into the pipe
+                          if ( DEBUG_LOAD_FMAP ) {
+                            printf("load_fmap(): feed 0 padding to pipe\n" );
+                          }
+                          to_pipe.bus_val = 0;
                         }
-                        to_pipe.bus_val = 0;
+                        printf("load_fmap(): trying to write to pipe\n");
+                        printf("load_fmap(): nBlk=%d,inTileY=%d,inTileX=%d\n\t", nBlk,
+                            inTileY, inTileX);
+                        for ( int i = 0; i < BASE_PER_FBUS; i++ )
+                          printf("%d ", to_pipe.vec[i]);
+                        printf("\n");
+
+                        write_pipe_block( pipe_fmap, &to_pipe.bus_val );
                       }
-                      printf("load_fmap(): trying to write to pipe\n");
-                      printf("load_fmap(): nBlk=%d,inTileY=%d,inTileX=%d\n\t", nBlk,
-                          inTileY, inTileX);
-                      for ( int i = 0; i < BASE_PER_FBUS; i++ )
-                        printf("%d ", to_pipe.vec[i]);
-                      printf("\n");
-
-                      write_pipe_block( pipe_fmap, &to_pipe.bus_val );
                     }
                   }
                 }
