@@ -83,44 +83,44 @@ void test_conv( base * fmap, base * wts, base * ofmap,
         padded[y+padding][x+padding][z] = fmap_tmp[y][x][z];
 
   // test reshape
-  for (int nf=0;nf<num_fil;nf++){
-    for (int y=0;y<fil_ht;y++){
-      for (int x=0;x<fil_wid;x++){
-        for (int z=0;z<fmap_dep;z++){
-          if (wts_tmp[nf][y][x][z] != 1){
-            std::cout << "(" << x << "," << y << "," << z << ") " 
-            << "wts_tmp not right!" << std::endl;
-          }
-        }
-      }
-    }
-  }
+  //for (int nf=0;nf<num_fil;nf++){
+  //  for (int y=0;y<fil_ht;y++){
+  //    for (int x=0;x<fil_wid;x++){
+  //      for (int z=0;z<fmap_dep;z++){
+  //        if (wts_tmp[nf][y][x][z] != 1){
+  //          std::cout << "(" << x << "," << y << "," << z << ") " 
+  //          << "wts_tmp not right!" << std::endl;
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 
-  for (int y=0;y<fmap_ht;y++){
-    for (int x=0;x<fmap_wid;x++){
-      for (int z=0;z<fmap_dep;z++){
-        if (fmap_tmp[y][x][z] != 1){
-          std::cout << "(" << x << "," << y << "," << z << ") " 
-          << "fmap_tmp not right!" << std::endl;
-        }
-      }
-    }
-  }
+  //for (int y=0;y<fmap_ht;y++){
+  //  for (int x=0;x<fmap_wid;x++){
+  //    for (int z=0;z<fmap_dep;z++){
+  //      if (fmap_tmp[y][x][z] != 1){
+  //        std::cout << "(" << x << "," << y << "," << z << ") " 
+  //        << "fmap_tmp not right!" << std::endl;
+  //      }
+  //    }
+  //  }
+  //}
 
-  for (int y=0;y<padded_ht;y++){
-    for (int x=0;x<padded_wid;x++){
-      for (int z=0;z<fmap_dep;z++){
-        if ((x<padding || y<padding || x>=padded_wid-padding || y>=padded_ht-padding) && padded[y][x][z] != 0) {
-          std::cout << "(" << y << "," << x << "," << z << ") " 
-                    << " padding not right! " << padded[y][x][z] << std::endl;
-        }
-        else if (!(x<padding || y<padding || x>=padded_wid-padding || y>=padded_ht-padding) && padded[y][x][z] != 1) {
-          std::cout << "(" << y << "," << x << "," << z << ") " 
-                    << " fmap not right! " << padded[y][x][z] << std::endl;
-        }
-      }
-    }
-  }
+  //for (int y=0;y<padded_ht;y++){
+  //  for (int x=0;x<padded_wid;x++){
+  //    for (int z=0;z<fmap_dep;z++){
+  //      if ((x<padding || y<padding || x>=padded_wid-padding || y>=padded_ht-padding) && padded[y][x][z] != 0) {
+  //        std::cout << "(" << y << "," << x << "," << z << ") " 
+  //                  << " padding not right! " << padded[y][x][z] << std::endl;
+  //      }
+  //      else if (!(x<padding || y<padding || x>=padded_wid-padding || y>=padded_ht-padding) && padded[y][x][z] != 1) {
+  //        std::cout << "(" << y << "," << x << "," << z << ") " 
+  //                  << " fmap not right! " << padded[y][x][z] << std::endl;
+  //      }
+  //    }
+  //  }
+  //}
 
 
   // Compute - Assumes [fil_wid] is odd

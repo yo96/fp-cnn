@@ -20,9 +20,10 @@ void compute(
   bool debug = false;
 
   // On-chip storage
-  wts_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
-  __attribute__((xcl_array_partition(complete, 1)))
-  __attribute__((xcl_array_reshape(cyclic, WBUS_PER_DDRBUS, 2)));
+  //wts_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
+  ddr_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
+  __attribute__((xcl_array_partition(complete, 1)));
+  //__attribute__((xcl_array_reshape(cyclic, WBUS_PER_DDRBUS, 2)));
 
   //wts_bus_t wts_ser[NUM_FIL_BUF][WBUS_PER_DDRBUS]
   //__attribute__((xcl_array_partition(complete, 0)));
@@ -36,23 +37,18 @@ void compute(
   base shreg_fmap[SHREG_SIZE]
   __attribute__((xcl_array_partition(complete, 1)));
 
+  const int wpd = WBUS_PER_DDRBUS;
+  int fil_ddr_size = (fil_size+wpd-1)/wpd;
+
   for (int ni=0;ni<n_iter;ni++){
     // read wts into BRAM
     LOAD_WTS: 
     for (int i=0;i<NUM_FIL_BUF;i++){
-      for (int j=0;j<fil_size;j+=WBUS_PER_DDRBUS){        
+      for (int j=0;j<fil_ddr_size;j++){        
         ddr_bus from_wts_pipe;
-        wts_bus to_wts_ram[WBUS_PER_DDRBUS];
+        //wts_bus to_wts_ram[WBUS_PER_DDRBUS];
         read_pipe_block(pipe_wts, &from_wts_pipe.bus_val);
-        // Serialize ddr_bus into wts_bus
-        __attribute__((opencl_unroll_hint))
-        for (int k=0;k<WBUS_PER_DDRBUS;k++){
-          for (int m=0;m<BASE_PER_WBUS;m++){
-            int offset = k*BASE_PER_WBUS;
-            to_wts_ram[k].vec[m] = from_wts_pipe.vec[m+offset];
-            wts_ram[i][j+k] = to_wts_ram[k].bus_val;                                
-          } // m
-        } // k
+        wts_ram[i][j] = from_wts_pipe.bus_val;
       } // j - fil_size
     } // i - NUM_FIL_BUF
     //printf("comp: wts loaded.\n");
@@ -87,13 +83,15 @@ void compute(
                 printf("\n");                  
             }
             // feed wts into shreg
+            ddr_bus from_wts_ram[NUM_FIL_BUF];
             __attribute__((opencl_unroll_hint))
             for (int nf=0;nf<NUM_FIL_BUF;nf++){
-              wts_bus wbus;
-              wbus.bus_val = wts_ram[nf][f];
+              int addr   = f/wpd;
+              int offset = f - addr*wpd; 
+              from_wts_ram[nf].bus_val = wts_ram[nf][addr];
               for (int i=0,j=0,nreg=0;j<SYS_WID;i+=nreg,j++){
                 nreg++;               
-                shreg_wts[nf][i] = wbus.vec[j];
+                shreg_wts[nf][i] = from_wts_ram[nf].vec[j+offset*BASE_PER_WBUS];
               }           
 
             } // NUM_FIL_BUF
@@ -150,7 +148,7 @@ void compute(
             }
             write_pipe_block(pipe_out, &obus.bus_val);
             
-          } // fil_size
+          } // f < fil_size
 
       } // o_wid
     } // o_ht

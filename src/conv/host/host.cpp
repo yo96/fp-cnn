@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
     /************************************************************************* 
      * HOST CODE AREA  
      ************************************************************************/
-    const int fmap_wid  = 14;
-    const int fmap_ht   = 14;
+    const int fmap_wid  = 28;
+    const int fmap_ht   = 28;
     const int fmap_dep  = 32;
     //const int fmap_size = fmap_wid * fmap_ht * fmap_dep;
     // calculate aligned size for a fmap
@@ -137,11 +137,11 @@ int main(int argc, char* argv[]) {
     std::vector<base,aligned_allocator<base>> ref     (ofmap_size, 0);
 
     // Initiallize fmap
-    //for (int i=0;i<fmap_size;i++)
-    //  src_fmap[i] = (rand() % 10) - 5;
+    for (int i=0;i<fmap_size;i++)
+      src_fmap[i] = (rand() % 10) - 5;
 
-    //for (int i=0;i<wts_size;i++)
-    //  src_wts[i] = (rand() %10) - 5;
+    for (int i=0;i<wts_size;i++)
+      src_wts[i] = (rand() %10) - 5;
     // Get CPU result
     test_conv<base>(src_fmap.data(), src_wts.data(), ref.data(),
               fmap_wid, fmap_ht, fmap_dep,
