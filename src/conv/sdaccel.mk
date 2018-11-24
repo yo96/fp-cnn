@@ -34,7 +34,7 @@ HOST_LFLAGS =  -L${XILINX_SDX}/runtime/lib/x86_64 -lxilinxopencl -lrt -pthread
 	# base_HDLSRCS = kernel source files (.v .xml .tcl)
 	# base_TCL     = tcl script for generating xo object
 
-conv_SRCS   = krnl/*.cl
+conv_SRCS   = krnl/load_fmap.cl krnl/compute.cl krnl/load_wts.cl krnl/output.cl
 conv_HDRS   = krnl/*.h
 conv_CFLAGS = -g --memory_port_data_width all:512 #--max_memory_ports all 
 conv_CFLAGS += -I krnl

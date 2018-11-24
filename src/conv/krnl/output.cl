@@ -39,7 +39,8 @@ void load_out(
     } // m - OBUS_PER_DDRBUS
     o_fmap[wr_addr] = to_ddr.bus_val;
     wr_addr ++;
- 
   } // o_size
-  printf("[load_out]: DONE!\n");
+
+
+  //printf("[load_out]: DONE!\n");
 }
