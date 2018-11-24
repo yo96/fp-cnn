@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
     /************************************************************************* 
      * HOST CODE AREA  
      ************************************************************************/
-    const int fmap_wid  = 28;
-    const int fmap_ht   = 28;
+    const int fmap_wid  = 14;
+    const int fmap_ht   = 14;
     const int fmap_dep  = 32;
     //const int fmap_size = fmap_wid * fmap_ht * fmap_dep;
     // calculate aligned size for a fmap
@@ -108,8 +108,8 @@ int main(int argc, char* argv[]) {
     const int fmap_size = row_ddr_size * BASE_PER_DDRBUS * fmap_ht * fmap_nblk;
 
     const int num_fil  = 32;
-    const int fil_ht   = 3;
-    const int fil_wid  = 3;
+    const int fil_ht   = 5;
+    const int fil_wid  = 5;
     const int fil_dep  = fmap_dep;
     const int fil_size = fil_wid * fil_ht * fil_dep;
     // calculate aligned size of a filter
@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
     const int wts_size = fil_ailgned_size * num_fil;
 
     const int conv_stride = 1;
-    const int padding  = 1; // to be changed 
+    const int padding  = 2; // to be changed 
     const int n_iter   = num_fil/NUM_FIL_BUF;
 
     const int ofmap_wid   = ceil( (float)(fmap_wid)/conv_stride );
@@ -137,11 +137,11 @@ int main(int argc, char* argv[]) {
     std::vector<base,aligned_allocator<base>> ref     (ofmap_size, 0);
 
     // Initiallize fmap
-    for (int i=0;i<fmap_size;i++)
-      src_fmap[i] = (rand() % 10) - 5;
+    //for (int i=0;i<fmap_size;i++)
+    //  src_fmap[i] = (rand() % 10) - 5;
 
-    for (int i=0;i<wts_size;i++)
-      src_wts[i] = (rand() %10) - 5;
+    //for (int i=0;i<wts_size;i++)
+    //  src_wts[i] = (rand() %10) - 5;
     // Get CPU result
     test_conv<base>(src_fmap.data(), src_wts.data(), ref.data(),
               fmap_wid, fmap_ht, fmap_dep,
