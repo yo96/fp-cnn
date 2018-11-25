@@ -10,12 +10,11 @@
 __attribute__((reqd_work_group_size(1,1,1)))
 __kernel
 void compute( 
-  int o_wid,
-  int o_ht,
-  int o_nblk,
-  int n_fil,
-  int fil_size, // in wts_bus_
-  int n_iter ) 
+  int out_wid,
+  int out_ht,
+  int pool_size,
+  int fil_size, // in wts_bus
+  int n_iter   ) 
 {
   bool debug = false;
 
@@ -23,10 +22,6 @@ void compute(
   //wts_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
   ddr_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
   __attribute__((xcl_array_partition(complete, 1)));
-  //__attribute__((xcl_array_reshape(cyclic, WBUS_PER_DDRBUS, 2)));
-
-  //wts_bus_t wts_ser[NUM_FIL_BUF][WBUS_PER_DDRBUS]
-  //__attribute__((xcl_array_partition(complete, 0)));
 
   base sys[SYS_HT][SYS_WID] 
   __attribute__((xcl_array_partition(complete, 0)));
@@ -55,8 +50,10 @@ void compute(
 
     // iterating output fmap
     ITER_FMAP:
-    for (int y=0;y<o_ht;y++){
-      for (int x=0;x<o_wid;x++){
+    for (int y=0;y<out_ht;y++){
+      for (int x=0;x<out_wid;x++){
+        for (int p=0;p<pool_size;p++){
+
         //printf("comp: iterating ofmap(%d,%d).\n",y,x);
 
           __attribute__((xcl_pipeline_loop))
@@ -150,9 +147,10 @@ void compute(
             
           } // f < fil_size
 
+        } // p<pool_size
       } // o_wid
     } // o_ht
     //printf("comp: %d-th iteration.\n", ni);
   } // n_iter
-  //printf("[comp]: done\n");
+  //printf("compute(): done\n");
 }

@@ -16,9 +16,9 @@ void pool_wb(
   ddr_bus_t wb_buf[WB_BUF_SIZE];
   ddr_bus   to_buf; 
 
-  int ddrAddr  = 0;
-  int bufAddr  = 0;
-  int OPD      = OBUS_PER_DDRBUS;
+  int ddrAddr = 0;
+  int bufAddr = 0;
+  int OPD     = OBUS_PER_DDRBUS;
   //int widDSize = (o_wid+OPD-1) / OPD;
   int numTrans = n_trans; // o_nblk * o_ht * widDSize; 
 
@@ -32,9 +32,13 @@ void pool_wb(
       for (int opd=0;opd<numOBUS;opd++){
 
         // perform max pooling
+        if( DEBUG_POOL )
+          printf("pooling(): reading from pipe... i=%d, x=%d, opd=%d\n", i, x, opd);
         out_bus pool_bus;
         read_pipe_block(pipe_relu, &pool_bus.bus_val);
-        for (int p=0;p<pool_size-1;p++){
+        for (int p=1;p<pool_size;p++){
+          if ( DEBUG_POOL )
+            printf("pooling(): performing max pooling... reading %d-th out_bus from pipe\n", p+1);
           out_bus tmp;
           read_pipe_block(pipe_relu, &tmp.bus_val);
           for (int j=0;j<BASE_PER_OBUS;j++){
@@ -44,6 +48,8 @@ void pool_wb(
         } // p<pool_size-1
 
         // write out_bus into ddr_bus
+        if ( DEBUG_POOL )
+          printf("pooling(): writing pooling result into ddr_bus... \n");
         for (int k=0;k<BASE_PER_OBUS;k++)
           to_buf.vec[k+opd*BASE_PER_OBUS] = pool_bus.vec[k];
 
@@ -64,13 +70,16 @@ void pool_wb(
       // burst write to ddr if buffer is full or no data left
       if (bufAddr==WB_BUF_SIZE || bufAddr == numTrans){
         int wrLen = numTrans < WB_BUF_SIZE ? numTrans : WB_BUF_SIZE;
+        if(DEBUG_POOL)
+          printf("pooling(): busrt writing %d ddr_bus into DDR\n",wrLen);
+        
         for (int j=0;j<wrLen;j++) 
           o_fmap[ddrAddr+j] = wb_buf[j];
-        numTrans -= WB_BUF_SIZE;
+        numTrans -= wrLen;
         ddrAddr  += WB_BUF_SIZE;  
         bufAddr   = 0;
       }
     } // x < o_wid
   } // i < o_size
-
+  if(DEBUG_POOL) printf("pooling(): DONE\n");
 }//pool_wb

@@ -28,7 +28,7 @@ typedef fmap_bus_t wts_bus_t;
 /*****************************************************************************
  * Pipes
  *****************************************************************************/
-pipe fmap_bus_t pipe_fmap __attribute__((xcl_reqd_pipe_depth(16)));
-pipe ddr_bus_t  pipe_wts  __attribute__((xcl_reqd_pipe_depth(16)));
-pipe out_bus_t  pipe_out  __attribute__((xcl_reqd_pipe_depth(16)));
-pipe out_bus_t  pipe_relu __attribute__((xcl_reqd_pipe_depth(16)));
+pipe fmap_bus_t pipe_fmap __attribute__((xcl_reqd_pipe_depth(512)));
+pipe ddr_bus_t  pipe_wts  __attribute__((xcl_reqd_pipe_depth(512)));
+pipe out_bus_t  pipe_out  __attribute__((xcl_reqd_pipe_depth(512)));
+pipe out_bus_t  pipe_relu __attribute__((xcl_reqd_pipe_depth(512)));
