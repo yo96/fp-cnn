@@ -18,7 +18,6 @@ void load_fmap(
                  int  fil_ht,     // height of filters
                  int  tile_wid,   // the width of each padded tile
                  int  tile_ht,    // the height of each padded tile
-                 int  tile_nblk,  // number of blocks in each padded tile
                  int  lpadding,   // number of padding pixels in the left
                  int  rpadding,   // number of padding pixels in the right
                  int  upadding,   // number of padding pixels in the upside
@@ -35,8 +34,8 @@ void load_fmap(
       fmap_wid, fmap_ht, fmap_nblk, fil_wid, fil_ht
     );
     printf(
-      "load_fmap() args: tile_wid:%d, tile_ht:%d, tile_nblk:%d\n",
-      tile_wid, tile_ht, tile_nblk
+      "load_fmap() args: tile_wid:%d, tile_ht:%d\n",
+      tile_wid, tile_ht 
     );
     printf(
       "load_fmap() args: lpad:%d, rpad:%d, upad:%d, dpad:%d, pool_wid:%d, pool_ht:%d\n",

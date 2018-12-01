@@ -148,7 +148,6 @@ int main(int argc, char* argv[]) {
                  //int  fil_ht,     // height of filters
                  //int  tile_wid,   // the width of each padded tile
                  //int  tile_ht,    // the height of each padded tile
-                 //int  tile_nblk,  // number of blocks in each padded tile
                  //int  lpadding,   // number of padding pixels in the left
                  //int  rpadding,   // number of padding pixels in the right
                  //int  upadding,   // number of padding pixels in the upside
@@ -167,16 +166,15 @@ int main(int argc, char* argv[]) {
     krnl_load_fmap.setArg( 5, 3       ); // fil_ht
     krnl_load_fmap.setArg( 6, 30      ); // tile_wid
     krnl_load_fmap.setArg( 7, 30      ); // tile_ht
-    krnl_load_fmap.setArg( 8, 1       ); // tile_nblk
-    krnl_load_fmap.setArg( 9, 1       ); // lpadding
-    krnl_load_fmap.setArg(10, 1       ); // rpadding
-    krnl_load_fmap.setArg(11, 1       ); // upadding
-    krnl_load_fmap.setArg(12, 1       ); // dpadding
-    krnl_load_fmap.setArg(13, 1      ); // pool_wid
-    krnl_load_fmap.setArg(14, 1       ); // pool_ht
-    krnl_load_fmap.setArg(15, 1       ); // pool_stride
-    krnl_load_fmap.setArg(16, 1       ); // stride
-    krnl_load_fmap.setArg(17, 1       ); // niter 
+    krnl_load_fmap.setArg( 8, 1       ); // lpadding
+    krnl_load_fmap.setArg( 9, 1       ); // rpadding
+    krnl_load_fmap.setArg(10, 1       ); // upadding
+    krnl_load_fmap.setArg(11, 1       ); // dpadding
+    krnl_load_fmap.setArg(12, 1      ); // pool_wid
+    krnl_load_fmap.setArg(13, 1       ); // pool_ht
+    krnl_load_fmap.setArg(14, 1       ); // pool_stride
+    krnl_load_fmap.setArg(15, 1       ); // stride
+    krnl_load_fmap.setArg(16, 1       ); // niter 
 
     // niter * output size * filter size
     krnl_output.setArg(0, 1*28*28*3*3*2 ); // o_size
