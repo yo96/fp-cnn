@@ -1,6 +1,6 @@
 #define FMAP_WID_1 ( 28 )
 #define FMAP_HT_1 ( 28 )
-#define FMAP_DEP_1 ( 1 )
+#define FMAP_DEP_1 ( 32 )
 #define FIL_WID_1 ( 3 )
 #define FIL_HT_1 ( 3 )
 #define NUM_FIL_1 ( 32 )

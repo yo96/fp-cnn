@@ -34,6 +34,13 @@ typedef struct{
 
 cl::CommandQueue q;
 cl::Context context;
+std::vector<cl::Device> devices;
+cl::Device device;
+std::vector<cl::Platform> platforms;
+cl::Program::Binaries bins;
+char* buf;
+cl::Program program;
+
 cl::Kernel krnl_load_fmap;
 cl::Kernel krnl_load_wts;
 cl::Kernel krnl_conv;
@@ -153,11 +160,11 @@ void exec_layer( const layer_arg_t& arg ) {
   std::vector<base,aligned_allocator<base>> ref     (out_size,  0);
 
   // Initiallize fmap
-  //for (int i=0;i<fmap_size;i++)
-    //src_fmap[i] = (rand() % 10);
+  for (int i=0;i<fmap_size;i++)
+    src_fmap[i] = (rand() % 10);
 
-  //for (int i=0;i<wts_size;i++)
-    //src_wts[i] = (rand() %10);
+  for (int i=0;i<wts_size;i++)
+    src_wts[i] = (rand() %10);
   
   // Get CPU result
   test_conv<base>(src_fmap.data(), src_wts.data(), ref.data(),
@@ -179,6 +186,7 @@ void exec_layer( const layer_arg_t& arg ) {
   q.enqueueMigrateMemObjects({buf_fmap,buf_out}, 0); /* 0 means from host*/
   q.finish(); 
   //set the kernel Arguments
+  std::cout << "Setting kernel arguments..." << std::endl;
   krnl_load_fmap.setArg( 0, buf_fmap    ); // fmap ptr
   krnl_load_fmap.setArg( 1, arg.fmap_wid    ); // fmap_wid
   krnl_load_fmap.setArg( 2, arg.fmap_ht     ); // fmap_ht
@@ -266,9 +274,6 @@ void initialize( int argc, char* argv[] ) {
 
   char* xclbinFilename = argv[1];
   
-  std::vector<cl::Device> devices;
-  cl::Device device;
-  std::vector<cl::Platform> platforms;
   bool found_device = false;
 
   //traversing all Platforms To find Xilinx Platform and targeted
@@ -311,14 +316,13 @@ void initialize( int argc, char* argv[] ) {
   bin_file.seekg (0, bin_file.end);
   unsigned nb = bin_file.tellg();
   bin_file.seekg (0, bin_file.beg);
-  char *buf = new char [nb];
+  buf = new char [nb];
   bin_file.read(buf, nb);
   
   // Creating Program from Binary File
-  cl::Program::Binaries bins;
   bins.push_back({buf,nb});
   devices.resize(1);
-  cl::Program program(context, devices, bins);
+  program = cl::Program(context, devices, bins);
   
   // This call will get the kernel object from program.
   std::cout << "Creating kernels..." << std::endl;
@@ -341,7 +345,7 @@ void run_inference() {
       FMAP_WID_1, FMAP_HT_1, FMAP_DEP_1, 
       FIL_WID_1, FIL_HT_1, NUM_FIL_1, 
       POOL_WID_1, POOL_HT_1, POOL_STRIDE_1, 
-      CONV_STRIDE_1, 
+      CONV_STRIDE_1, TILE_WID_1, TILE_HT_1,
       LPADDING_1, RPADDING_1, UPADDING_1, DPADDING_1
       );
   exec_layer( *arg  );

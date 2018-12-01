@@ -13,4 +13,4 @@
 #define NUM_FIL_BUF     BASE_PER_OBUS
 #define SYS_WID         BASE_PER_FBUS
 #define SYS_HT          BASE_PER_OBUS
-#define FIL_BUF_SIZE    50
+#define FIL_BUF_SIZE    100
