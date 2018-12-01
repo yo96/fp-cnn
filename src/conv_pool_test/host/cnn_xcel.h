@@ -8,6 +8,7 @@
 #include "allocator.h"
 #include "krnl/configs.h"
 #include "test.h"
+#include "args.h"
 //TARGET_DEVICE macro needs to be passed from gcc command line
 #if defined(SDX_PLATFORM) && !defined(TARGET_DEVICE)
     #define STR_VALUE(arg)      #arg
@@ -27,7 +28,7 @@ typedef struct{
   int fmap_wid, fmap_ht, fmap_dep;
   int fil_wid, fil_ht, num_fil;
   int pool_wid, pool_ht, pool_stride;
-  int conv_stride;
+  int conv_stride, tile_wid, tile_ht;
   int lpadding, rpadding, upadding, dpadding;
 } layer_arg_t;
 
@@ -43,28 +44,15 @@ void set_kernel_arg( layer_arg_t& arg,
     int fmap_wid, int fmap_ht, int fmap_dep, 
     int fil_wid, int fil_ht, int num_fil, 
     int pool_wid, int pool_ht, int pool_stride, 
-    int conv_stride,
+    int conv_stride, int tile_wid, int tile_ht,
     int lpadding, int rpadding, int upadding, int dpadding
     ) {
   arg.fmap_wid = fmap_wid; arg.fmap_ht = fmap_ht; arg.fmap_dep = fmap_dep;
   arg.fil_wid = fil_wid; arg.fil_ht = fil_ht; arg.num_fil = num_fil;
   arg.pool_wid = pool_wid; arg.pool_ht = pool_ht; arg.pool_stride = pool_stride;
-  arg.conv_stride = conv_stride;
+  arg.conv_stride = conv_stride; arg.tile_wid = tile_wid; arg.tile_ht = tile_ht;
   arg.lpadding = lpadding; arg.rpadding = rpadding;
   arg.upadding = upadding; arg.dpadding = dpadding;
-}
-
-void run_inference() {
-  layer_arg_t* arg = new layer_arg_t();
-
-  set_kernel_arg( *arg, 
-      FMAP_WID_1, FMAP_HT_1, FMAP_DEP_1, 
-      FIL_WID_1, FIL_HT_1, NUM_FIL_1, 
-      POOL_WID_1, POOL_HT_1, POOL_STRIDE_1, 
-      CONV_STRIDE_1, 
-      LPADDING_1, RPADDING_1, UPADDING_1, DPADDING_1
-      );
-  exec_layer( *arg  );
 }
 
 void exec_layer( const layer_arg_t& arg ) {
@@ -273,7 +261,7 @@ void initialize( int argc, char* argv[] ) {
 
   if(argc != 2) {
       std::cout << "Usage: " << argv[0] <<" <xclbin>" << std::endl;
-      return EXIT_FAILURE;
+      return;
   }
 
   char* xclbinFilename = argv[1];
@@ -307,7 +295,7 @@ void initialize( int argc, char* argv[] ) {
   if (found_device == false){
      std::cout << "Error: Unable to find Target Device " 
                << target_device_name << std::endl;
-     return EXIT_FAILURE; 
+     return; 
   }
 
   // Creating Context and Command Queue for selected device
@@ -344,4 +332,17 @@ void initialize( int argc, char* argv[] ) {
   krnl_conv      = cl::Kernel(program, "compute"  );
   krnl_relu      = cl::Kernel(program, "acc_relu" );    
   krnl_pool      = cl::Kernel(program, "pool_wb"  );
+}
+
+void run_inference() {
+  layer_arg_t* arg = new layer_arg_t();
+
+  set_kernel_arg( *arg, 
+      FMAP_WID_1, FMAP_HT_1, FMAP_DEP_1, 
+      FIL_WID_1, FIL_HT_1, NUM_FIL_1, 
+      POOL_WID_1, POOL_HT_1, POOL_STRIDE_1, 
+      CONV_STRIDE_1, 
+      LPADDING_1, RPADDING_1, UPADDING_1, DPADDING_1
+      );
+  exec_layer( *arg  );
 }

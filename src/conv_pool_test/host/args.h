@@ -8,6 +8,8 @@
 #define POOL_HT_1 ( 2 )
 #define POOL_STRIDE_1 ( 2 )
 #define CONV_STRIDE_1 ( 1 )
+#define TILE_WID_1 ( 30 )
+#define TILE_HT_1 ( 4 )
 #define LPADDING_1 ( 1 )
 #define RPADDING_1 ( 1 )
 #define UPADDING_1 ( 1 )
