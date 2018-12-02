@@ -273,7 +273,7 @@ void initialize( int argc, char* argv[] ) {
   }
 
   char* xclbinFilename = argv[1];
-  
+
   bool found_device = false;
 
   //traversing all Platforms To find Xilinx Platform and targeted
