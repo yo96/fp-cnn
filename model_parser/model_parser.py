@@ -26,17 +26,26 @@ class IR( object ):
     s.relu = relu
     s.pooling = pooling
   def gen_outshape( s ):
-    o_w = int(ceil( float(s.conv.filter_w)/float(s.conv.stride) ))
-    o_h = int(ceil( float(s.conv.filter_h)/float(s.conv.stride) ))
+    o_w = int(ceil( float(s.conv.fmap_w)/float(s.conv.stride) ))
+    o_h = int(ceil( float(s.conv.fmap_h)/float(s.conv.stride) ))
     s.out_shape = [
       int(ceil( float(o_w-s.pooling.pool_w+1)/float(s.pooling.pool_stride))), 
       int(ceil( float(o_h-s.pooling.pool_h+1)/float(s.pooling.pool_stride))), 
       s.conv.filter_num
     ]
   def gen_tile( s ):
-    s.conv.tile_w = s.conv.filter_w + s.conv.lpadding + s.conv.rpadding
+    s.conv.tile_w = s.conv.fmap_w + s.conv.lpadding + s.conv.rpadding
     s.conv.tile_h = \
       ( s.pooling.pool_h - 1 ) * s.conv.stride + s.conv.filter_h
+  def _print( s ):
+    print( 'IR:\n' )
+    print( '\tconv:\n' )
+    print( s.conv.nn_type + ', fmap_w = ' + str(s.conv.fmap_w) + ', fmap_h = ' + str(s.conv.fmap_h) + ', fmap_chnl = ' + str(s.conv.fmap_chnl) + '\n' )
+    print( 'filter_w = ' + str(s.conv.filter_w) + ', filter_h = ' + str(s.conv.filter_h) + ', filter_num = ' + str(s.conv.filter_num) + '\n')
+    print( 'stride = ' + str(s.conv.stride) + ', tile_w = ' + str(s.conv.tile_w) + ', tile_h = ' + str(s.conv.tile_h) + '\n')
+    print( '\trelu: ' + str(s.relu) + '\n' )
+    print( '\tpooling: w = ' + str(s.pooling.pool_w) + ', h = ' + str(s.pooling.pool_h) + ', stride = ' + str(s.pooling.pool_stride) + '\n' )
+    print( '\tout_shape: ' + str( s.out_shape ) + '\n' )
 
 class conv( object ):
   def __init__( s, nn_type, fmap_w, fmap_h, fmap_chnl, filter_w, filter_h,
@@ -100,7 +109,7 @@ def get_fc_info( s ):
 
 def gen_macro( out, idx, body, value ):
   s = '#define {} ({})\n'.format(
-      body+str(idx), str(value)
+      body+'_'+str(idx), str(value)
     )
   out.write( s )
 
@@ -201,7 +210,7 @@ def generate_params( IRs ):
 
   for ir in IRs:
     _wts_buf_size =\
-      ir.conv.filter_w*ir.conv.filter_h*ir.conv.filter_num*BASE/DDR
+      ir.conv.filter_w*ir.conv.filter_h*ir.conv.fmap_chnl*BASE/DDR
     _tile_buf_size =\
       ir.conv.tile_w*ir.conv.tile_h*ir.conv.fmap_chnl*BASE/DDR
     wts_buf_size = max( wts_buf_size, _wts_buf_size )
@@ -262,8 +271,24 @@ def generate_project( IRs, params ):
   with open( HOST_DIR+'args.h', 'w' ) as out:
     for i, ir in enumerate(IRs):
       for arg, val in arg_dict.iteritems():
-        exec( '_val = ir.' + val )
-        gen_macro( out, i, arg, _val )
+        # exec( '_val = ir.' + val )
+        # gen_macro( out, i, arg, _val )
+        gen_macro( out, i, 'FMAP_WID', ir.conv.fmap_w )
+        gen_macro( out, i, 'FMAP_HT', ir.conv.fmap_h )
+        gen_macro( out, i, 'FMAP_DEP', ir.conv.fmap_chl )
+        gen_macro( out, i, 'FIL_WID', ir.conv.filter_w )
+        gen_macro( out, i, 'FIL_HT', ir.conv.filter_h )
+        gen_macro( out, i, 'NUM_FIL', ir.conv.filter_num )
+        gen_macro( out, i, 'POOL_WID', ir.pooling.pool_w )
+        gen_macro( out, i, 'POOL_HT', ir.pooling.pool_h )
+        gen_macro( out, i, 'POOL_STRIDE', ir.pooling.pool_stride )
+        gen_macro( out, i, 'CONV_STRIDE', ir.conv.stride )
+        gen_macro( out, i, 'TILE_WID', ir.conv.tile_w )
+        gen_macro( out, i, 'TILE_HT', ir.conv.tile_h )
+        gen_macro( out, i, 'LPADDING', ir.conv.lpadding )
+        gen_macro( out, i, 'RPADDING', ir.conv.rpadding )
+        gen_macro( out, i, 'UPADDING', ir.conv.upadding )
+        gen_macro( out, i, 'DPADDING', ir.conv.dpadding )
 
   with open( HOST_DIR+'cnn_xcel.h', 'w' ) as out:
     s = open( 'cnn_xcel.h.tmplt', 'r' ).read()
@@ -290,3 +315,5 @@ if __name__ == '__main__':
   IRs = parse_nn_configs()
   params = generate_params( IRs )
   generate_project( IRs, params )
+  for ir in IRs:
+    ir._print()

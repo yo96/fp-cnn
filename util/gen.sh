@@ -18,3 +18,6 @@ cp $TEMPLATE_DIR/krnl/compute.cl $DEST_DIR/krnl/compute.cl
 cp $TEMPLATE_DIR/krnl/load_fmap.cl $DEST_DIR/krnl/load_fmap.cl
 cp $TEMPLATE_DIR/krnl/load_wts.cl $DEST_DIR/krnl/load_wts.cl
 cp $TEMPLATE_DIR/krnl/pooling_wb.cl $DEST_DIR/krnl/pooling_wb.cl
+
+cd ../model_parser/
+python model_parser.py
