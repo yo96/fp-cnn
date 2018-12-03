@@ -99,15 +99,15 @@ int main(int argc, char* argv[]) {
   /************************************************************************* 
    * HOST CODE AREA  
    ************************************************************************/
-  const int fmap_wid    = 7;
-  const int fmap_ht     = 7;
-  const int fmap_dep    = 64;
-  const int conv_stride = 100;
+  const int fmap_wid    = 1;
+  const int fmap_ht     = 1;
+  const int fmap_dep    = 256;
+  const int conv_stride = 1;
   const int use_relu    = false;
 
-  const int num_fil     = 256;
-  const int fil_ht      = 7;
-  const int fil_wid     = 7;
+  const int num_fil     = 32;
+  const int fil_ht      = 1;
+  const int fil_wid     = 1;
   const int padding     = 0; // to be changed
   
   const int pool_wid    = 1;
@@ -205,12 +205,12 @@ int main(int argc, char* argv[]) {
   size_t wts_Bsize  = wts_size  * sizeof(base);
   size_t out_Bsize  = out_size  * sizeof(base);
   
-  assert(fmap_size==_fc1_in_size && out_size==_fc1_out_size); 
+  assert(fmap_size==_last_in_size && out_size==_last_out_size); 
 
-  std::vector<base,aligned_allocator<base>> src_fmap(fc1_in[0], fc1_in[0]+_fc1_in_size);
-  std::vector<base,aligned_allocator<base>> src_wts (fc1_w,  fc1_w+_fc1_w_size);
+  std::vector<base,aligned_allocator<base>> src_fmap(last_in[0], last_in[0]+_last_in_size);
+  std::vector<base,aligned_allocator<base>> src_wts (last_w,  last_w+_last_w_size);
   std::vector<base,aligned_allocator<base>> src_out (out_size,  0);
-  std::vector<base,aligned_allocator<base>> ref     (fc1_out[0], fc1_out[0]+_fc1_out_size);
+  std::vector<base,aligned_allocator<base>> ref     (last_out[0], last_out[0]+_last_out_size);
 
   // Initiallize fmap
   //for (int i=0;i<fmap_size;i++)
@@ -263,15 +263,27 @@ int main(int argc, char* argv[]) {
   krnl_load_fmap.setArg(3,  fmap_nblk  ); // fmap_nblk
   krnl_load_fmap.setArg(4,  fil_wid    ); // fil_wid
   krnl_load_fmap.setArg(5,  fil_ht     ); // fil_ht
-  krnl_load_fmap.setArg(6,  pool_wid   ); // pool_wid
-  krnl_load_fmap.setArg(7,  pool_ht    ); // pool_ht
-  krnl_load_fmap.setArg(8,  pool_stride); // pool_stride
-  krnl_load_fmap.setArg(9,  padding    ); // lpadding
-  krnl_load_fmap.setArg(10, padding    ); // rpadding
-  krnl_load_fmap.setArg(11, padding    ); // upadding
-  krnl_load_fmap.setArg(12, padding    ); // dpadding
-  krnl_load_fmap.setArg(13, conv_stride); // stride
-  krnl_load_fmap.setArg(14, n_iter     ); // niter 
+  krnl_load_fmap.setArg(6,  1     ); // tile_wid
+  krnl_load_fmap.setArg(7,  1     ); // tile_ht
+  krnl_load_fmap.setArg(8,  padding    ); // lpadding
+  krnl_load_fmap.setArg(9, padding    ); // rpadding
+  krnl_load_fmap.setArg(10, padding    ); // upadding
+  krnl_load_fmap.setArg(11, padding    ); // dpadding
+  krnl_load_fmap.setArg(12,  pool_wid   ); // pool_wid
+  krnl_load_fmap.setArg(13,  pool_ht    ); // pool_ht
+  krnl_load_fmap.setArg(14,  pool_stride); // pool_stride
+  krnl_load_fmap.setArg(15, conv_stride); // stride
+  krnl_load_fmap.setArg(16, n_iter     ); // niter 
+
+  //krnl_load_fmap.setArg(6,  pool_wid   ); // pool_wid
+  //krnl_load_fmap.setArg(7,  pool_ht    ); // pool_ht
+  //krnl_load_fmap.setArg(8,  pool_stride); // pool_stride
+  //krnl_load_fmap.setArg(9,  padding    ); // lpadding
+  //krnl_load_fmap.setArg(10, padding    ); // rpadding
+  //krnl_load_fmap.setArg(11, padding    ); // upadding
+  //krnl_load_fmap.setArg(12, padding    ); // dpadding
+  //krnl_load_fmap.setArg(13, conv_stride); // stride
+  //krnl_load_fmap.setArg(14, n_iter     ); // niter 
 
   krnl_load_wts.setArg(0, buf_wts     );
   krnl_load_wts.setArg(1, wts_ddr_size);
@@ -339,9 +351,9 @@ int main(int argc, char* argv[]) {
     rmse += sqrt( (src_out[i]-ref[i])*(src_out[i]-ref[i]) );
     src_mean += ref[i];
     dev_mean += src_out[i];
-    //std::cout << "cpu[" << i << "] = " << ref[i] 
-    //          << " dev[" << i << "] = " << src_out[i] 
-    //          << std::endl; 
+    std::cout << "cpu[" << i << "] = " << ref[i] 
+              << " dev[" << i << "] = " << src_out[i] 
+              << std::endl; 
 
   }
   rmse = rmse/out_size;
