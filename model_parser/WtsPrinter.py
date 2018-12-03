@@ -55,7 +55,7 @@ class WtsPrinter(  ):
     actual_wid = int( math.ceil( float( fil_wid ) / s._opd ) ) * s._opd
     actual_nf  = int( math.ceil( float( num_fil ) / s._bpo ) ) * s._bpo
     
-    print ( "Dumping wts `or %s... (%d filters, %d blocks) " % (key, num_fil, nblk) )
+    print ( "Dumping wts %s... (%d filters, %d blocks) " % (key, num_fil, nblk) )
     print "Numpy shape:", fp_wts.shape
     
     # Print array definition
