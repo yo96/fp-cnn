@@ -220,7 +220,6 @@ class WtsPrinter(  ):
               to_file = 0 if chnl >= dep else (
                         0 if x >= fmap_wid  else fp_wts[nf][idx] )
               fc_str += ( "%d, " % to_file ) 
-              print "acessing fp_wts[%d][%d]" % ( nf, idx )
             fc_str += ( "\n" )
       str_to_file += ( fc_str[:-3] + "},\n" )
     
