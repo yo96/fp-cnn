@@ -23,7 +23,7 @@ void compute(
   ddr_bus_t wts_ram[NUM_FIL_BUF][FIL_BUF_SIZE]
   __attribute__((xcl_array_partition(complete, 1)));
 
-  base sys[SYS_HT][SYS_WID] 
+  int sys[SYS_HT][SYS_WID] 
   __attribute__((xcl_array_partition(complete, 0)));
 
   base shreg_wts[NUM_FIL_BUF][SHREG_SIZE]  
@@ -135,7 +135,9 @@ void compute(
             // get ouput from systolic array
             out_bus obus;
             for (int i=0;i<SYS_HT;i++){
-              obus.vec[i] = sys[i][SYS_WID-1];
+              obus.vec[i] = sys[i][SYS_WID-1] > COMP_MAX? COMP_MAX :
+                            sys[i][SYS_WID-1] < COMP_MIN? COMP_MIN :
+                            sys[i][SYS_WID-1];
             }
             if (debug && x==0 && y==0 && f==8){
               printf("compute(): writing pipe with\n    ");

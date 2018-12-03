@@ -363,6 +363,6 @@ int main(int argc, char* argv[]) {
   std::cout << "device out mean:" << dev_mean << std::endl
             << "   ref out mean:" << src_mean << std::endl
             << "          error:" << rmse     << std::endl;
-  
+ 
   return 0;
 }

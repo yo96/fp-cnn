@@ -15,4 +15,6 @@
 #define SYS_HT          BASE_PER_OBUS
 #define FIL_BUF_SIZE    100
 
-#define FLOAT_NBITS     8
+#define FLOAT_NBITS     7
+#define COMP_MAX        32767
+#define COMP_MIN        -32768

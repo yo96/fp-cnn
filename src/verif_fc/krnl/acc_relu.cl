@@ -44,7 +44,9 @@ void acc_relu( int fil_size, int o_size, int use_relu )
     
     out_bus to_pipe;
     for (int k=0;k<BASE_PER_OBUS;k++)
-      to_pipe.vec[k] = acc[k];
+      to_pipe.vec[k] = acc[k] > COMP_MAX? COMP_MAX :
+                       acc[k] < COMP_MIN? COMP_MIN :
+                       acc[k];
     // write to pile 
     write_pipe_block(pipe_relu, &to_pipe.bus_val);
   
