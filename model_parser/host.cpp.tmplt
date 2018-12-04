@@ -1,0 +1,90 @@
+#include "cnn_xcel.h"
+#include "wts.h"
+
+int arg_max( const std::vector<base, aligned_allocator<base>>& vec, size_t size ) {{
+  int _idx = 0;
+  base _max = vec[0];
+
+  for ( size_t i = 1; i < size; ++i ) {{
+    if ( vec[i] > _max ) {{
+      _max = vec[i];
+      _idx = i;
+    }}
+  }}
+
+  return _idx;
+}}
+
+int main(int argc, char* argv[]) {{
+  int total = {BATCH_SIZE}, match = 0;
+
+  CnnAccelerator cnnxcel;
+
+  int ref_res, dev_res;
+  const int fmap_size = {FMAP_WID}*{FMAP_HT}*{FMAP_CHNL};
+  const int out_size  = {OUT_WID}*{OUT_HT}*{OUT_CHNL};
+  size_t fmap_Bsize = fmap_size * sizeof(base);
+  size_t out_Bsize  = out_size  * sizeof(base);
+
+  std::cout << "Intializing CnnAccelerator..." << std::endl;
+
+  cnnxcel.initialize( argc, argv );
+
+  {LOAD_WTS_CODE}
+
+  for ( int img_idx = 0; img_idx < total; img_idx++ ) {{
+
+    std::vector<base,aligned_allocator<base>> src_fmap({FIRST_LAYER}_in[img_idx], {FIRST_LAYER}_in[img_idx] + _{FIRST_LAYER}_in_size);
+    std::vector<base,aligned_allocator<base>> src_out (out_size,  0);
+    std::vector<base,aligned_allocator<base>> ref ({LAST_LAYER}_out[img_idx], {LAST_LAYER}_out[img_idx] + _{LAST_LAYER}_out_size);
+
+    cl::Buffer* buf_fmap = cnnxcel.create_buffer( CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, 
+        fmap_Bsize, src_fmap.data()
+      );
+
+    cl::Buffer* buf_out = cnnxcel.create_buffer( CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, 
+        out_Bsize, src_out.data()
+      );
+
+    std::cout << "Image index = " << img_idx << std::endl;
+
+    std::cout << "\tRunning inference..." << std::endl;
+
+    cnnxcel.run_inference( *buf_fmap, *buf_out );
+
+    double src_mean = 0;
+    double dev_mean = 0;
+    double rmse = 0;
+
+    for ( int i=0;i<out_size;i++){{
+      rmse += sqrt( (src_out[i]-ref[i])*(src_out[i]-ref[i]) );
+      src_mean += ref[i];
+      dev_mean += src_out[i];
+      //std::cout << "cpu[" << i << "] = " << ref[i] 
+                //<< " dev[" << i << "] = " << src_out[i] 
+                //<< std::endl; 
+    }}
+
+    rmse = rmse/out_size;
+    src_mean = src_mean/out_size;
+    dev_mean = dev_mean/out_size;
+
+    std::cout << "\tdevice out mean:" << dev_mean << std::endl
+              << "\t   ref out mean:" << src_mean << std::endl
+              << "\t          error:" << rmse     << std::endl;
+
+    ref_res = arg_max( ref, out_size );
+    dev_res = arg_max( src_out, out_size );
+    if ( ref_res == dev_res )
+      ++match;
+
+    std::cout << "\tTF predicted result = " << ref_res << std::endl;
+    std::cout << "\tDevice predicted result = " << dev_res << std::endl;
+  }}
+
+  std::cout << "Accuracy = " << float(match)/total << std::endl;
+
+  printf("Done!\n");
+
+  return EXIT_SUCCESS;
+}}

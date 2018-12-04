@@ -17,7 +17,7 @@ class WtsPrinter(  ):
   """
   Helper class to dump out weights 
   """
-  def __init__( s, npy_file, float_nbits=8, dtype='short',
+  def __init__( s, npy_file, wts_file, float_nbits=8, dtype='short',
                    base_per_obus=32, base_per_ddrbus=32 ):
     # Sanity check
     assert( base_per_ddrbus % base_per_obus == 0 )
@@ -36,7 +36,7 @@ class WtsPrinter(  ):
     s.wts_keys = s.wts_dict.keys()
 
     # Create a file to dump to 
-    s._dump_file = open( "wts.h", "w+" )
+    s._dump_file = open( wts_file, "w+" )
 
   def dump_conv_wts( s, key ):
 

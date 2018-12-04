@@ -14,3 +14,8 @@
 #define SYS_WID         BASE_PER_FBUS
 #define SYS_HT          BASE_PER_OBUS
 #define FIL_BUF_SIZE    {FIL_BUF_SIZE}
+
+#define NUM_LAYERS      {NUM_LAYERS}
+#define MAX_MID_SIZE    {MAX_MID_SIZE}
+
+#define FLOAT_NBITS     {FLOAT_NBITS}

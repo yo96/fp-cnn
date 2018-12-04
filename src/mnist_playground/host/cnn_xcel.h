@@ -105,9 +105,9 @@ class CnnAccelerator {
 
       // Initialize intermediate buffers
       mid_buf0 = new cl::Buffer( *context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, 
-          MAX_MID_SIZE*sizeof(base), dummy_vec0.data(), NULL );
+          MAX_MID_SIZE*sizeof(base)*BASE_PER_DDRBUS, dummy_vec0.data(), NULL );
       mid_buf1 = new cl::Buffer( *context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, 
-          MAX_MID_SIZE*sizeof(base), dummy_vec1.data(), NULL );
+          MAX_MID_SIZE*sizeof(base)*BASE_PER_DDRBUS, dummy_vec1.data(), NULL );
       q->enqueueMigrateMemObjects({*mid_buf0, *mid_buf1}, 0); /* 0 means from host*/
       q->finish(); 
     }
@@ -131,13 +131,40 @@ class CnnAccelerator {
       layer_arg_t* arg = new layer_arg_t();
 
       set_kernel_arg( *arg,
+        FMAP_WID_0, FMAP_HT_0, FMAP_DEP_0,
+        FIL_WID_0, FIL_HT_0, NUM_FIL_0,
+        POOL_WID_0, POOL_HT_0, POOL_STRIDE_0,
+        CONV_STRIDE_0, TILE_WID_0, TILE_HT_0,
+        LPADDING_0, RPADDING_0, UPADDING_0, DPADDING_0
+      );
+      exec_layer( *arg, buf_fmap, *mid_buf0, *wts_buf_vec[0], 1 );
+
+      set_kernel_arg( *arg,
+        FMAP_WID_1, FMAP_HT_1, FMAP_DEP_1,
+        FIL_WID_1, FIL_HT_1, NUM_FIL_1,
+        POOL_WID_1, POOL_HT_1, POOL_STRIDE_1,
+        CONV_STRIDE_1, TILE_WID_1, TILE_HT_1,
+        LPADDING_1, RPADDING_1, UPADDING_1, DPADDING_1
+      );
+      exec_layer( *arg, *mid_buf0, *mid_buf1, *wts_buf_vec[1], 1 );
+
+      set_kernel_arg( *arg,
         FMAP_WID_2, FMAP_HT_2, FMAP_DEP_2,
         FIL_WID_2, FIL_HT_2, NUM_FIL_2,
         POOL_WID_2, POOL_HT_2, POOL_STRIDE_2,
         CONV_STRIDE_2, TILE_WID_2, TILE_HT_2,
         LPADDING_2, RPADDING_2, UPADDING_2, DPADDING_2
       );
+      exec_layer( *arg, *mid_buf1, *mid_buf0, *wts_buf_vec[2], 1 );
 
+      set_kernel_arg( *arg,
+        FMAP_WID_3, FMAP_HT_3, FMAP_DEP_3,
+        FIL_WID_3, FIL_HT_3, NUM_FIL_3,
+        POOL_WID_3, POOL_HT_3, POOL_STRIDE_3,
+        CONV_STRIDE_3, TILE_WID_3, TILE_HT_3,
+        LPADDING_3, RPADDING_3, UPADDING_3, DPADDING_3
+      );
+      exec_layer( *arg, *mid_buf0, buf_out, *wts_buf_vec[3], 0 );
       //std::vector<base,aligned_allocator<base>> src_fmap(fmap_size, 1);
       //std::vector<base,aligned_allocator<base>> src_out (out_size,  0);
       //std::vector<base,aligned_allocator<base>> ref     (out_size,  0);
@@ -161,7 +188,7 @@ class CnnAccelerator {
                 //arg.pool_wid, arg.pool_ht, arg.pool_stride,
                 //arg.conv_stride, arg.lpadding );
       
-      exec_layer( *arg, buf_fmap, buf_out, *wts_buf_vec[0] );
+      //exec_layer( *arg, buf_fmap, buf_out, *wts_buf_vec[0] );
 
       //bool match = true;
       //std::cout << "Verifying results..." << std::endl;
@@ -227,7 +254,7 @@ class CnnAccelerator {
 
     void exec_layer( const layer_arg_t& arg, const cl::Buffer& buf_fmap, 
                                                    cl::Buffer& buf_out,
-                                             const cl::Buffer& buf_wts ) {
+                                             const cl::Buffer& buf_wts, int use_relu ) {
       assert(arg.fmap_dep >= BASE_PER_OBUS);
       assert(arg.num_fil  >= BASE_PER_OBUS);
 
@@ -349,7 +376,7 @@ class CnnAccelerator {
 
       krnl_relu->setArg(0, fil_fb_size); // fil_size
       krnl_relu->setArg(1, num_fil_wnd); // o_size
-      krnl_relu->setArg(2, 0); // use_relu
+      krnl_relu->setArg(2, use_relu); // use_relu
 
       krnl_pool->setArg(0, buf_out      ); // o_fmap
       krnl_pool->setArg(1, pool_size    ); // pool_size

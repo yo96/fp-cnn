@@ -4,8 +4,8 @@
 int main(int argc, char* argv[]) {
   class CnnAccelerator cnnxcel;
 
-  const int fmap_size = 7*7*64;
-  const int out_size  = 1*1*256;
+  const int fmap_size = 28*28*32;
+  const int out_size  = 1*1*32;
   size_t fmap_Bsize = fmap_size * sizeof(base);
   size_t out_Bsize  = out_size  * sizeof(base);
 
@@ -13,13 +13,14 @@ int main(int argc, char* argv[]) {
 
   cnnxcel.initialize( argc, argv );
 
-  cnnxcel.load_wts( 0, fc1_w, _fc1_w_size );
-  //cnnxcel.load_wts( 1, conv2_w, _conv1_w_size );
-  //cnnxcel.load_wts( 2, conv1_w, _conv1_w_size );
+  cnnxcel.load_wts( 0, conv1_w, _conv1_w_size );
+  cnnxcel.load_wts( 1, conv2_w, _conv2_w_size );
+  cnnxcel.load_wts( 2, fc1_w, _fc1_w_size );
+  cnnxcel.load_wts( 3, last_w, _last_w_size );
 
-  std::vector<base,aligned_allocator<base>> src_fmap(fc1_in[0], fc1_in[0] + _fc1_in_size);
+  std::vector<base,aligned_allocator<base>> src_fmap(conv1_in[0], conv1_in[0] + _conv1_in_size);
   std::vector<base,aligned_allocator<base>> src_out (out_size,  0);
-  std::vector<base,aligned_allocator<base>> ref (fc1_out[0], fc1_out[0] + _fc1_out_size);
+  std::vector<base,aligned_allocator<base>> ref (last_out[0], last_out[0] + _last_out_size);
 
   // Initiallize fmap
   //for (int i=0;i<fmap_size;i++)
