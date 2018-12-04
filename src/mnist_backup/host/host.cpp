@@ -1,6 +1,69 @@
 #include "cnn_xcel.h"
 #include "wts.h"
 
+short demo_img[28][28] = {
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},   
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} 
+};
+
+short demo_img[28][28] = {
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},   
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+ {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} 
+};
+
+
 int arg_max( const std::vector<base, aligned_allocator<base>>& vec, size_t size ) {
   int _idx = 0;
   base _max = vec[0];
@@ -16,7 +79,9 @@ int arg_max( const std::vector<base, aligned_allocator<base>>& vec, size_t size 
 }
 
 int main(int argc, char* argv[]) {
-  int total = 50, match = 0;
+  int total = 1, match = 0;
+  
+  // put data into a vector
 
   CnnAccelerator cnnxcel;
 
@@ -34,58 +99,61 @@ int main(int argc, char* argv[]) {
   cnnxcel.load_wts( 1, conv2_w, _conv2_w_size );
   cnnxcel.load_wts( 2, fc1_w, _fc1_w_size );
   cnnxcel.load_wts( 3, last_w, _last_w_size );
-
-  for ( int img_idx = 0; img_idx < total; img_idx++ ) {
     
-
-    // Takes the first image of the whole batch of input feature maps
-    std::vector<base,aligned_allocator<base>> src_fmap(conv1_in[img_idx], conv1_in[img_idx] + _conv1_in_size);
-    std::vector<base,aligned_allocator<base>> src_out (out_size,  0);
-    std::vector<base,aligned_allocator<base>> ref (last_out[img_idx], last_out[img_idx] + _last_out_size);
-
-    cl::Buffer* buf_fmap = cnnxcel.create_buffer( CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, 
-        fmap_Bsize, src_fmap.data()
-      );
-
-    cl::Buffer* buf_out = cnnxcel.create_buffer( CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, 
-        out_Bsize, src_out.data()
-      );
-
-    std::cout << "Running inference..." << std::endl;
-
-    cnnxcel.run_inference( *buf_fmap, *buf_out );
-
-    double src_mean = 0;
-    double dev_mean = 0;
-    double rmse = 0;
-
-    for ( int i=0;i<out_size;i++){
-      rmse += sqrt( (src_out[i]-ref[i])*(src_out[i]-ref[i]) );
-      src_mean += ref[i];
-      dev_mean += src_out[i];
-      //std::cout << "cpu[" << i << "] = " << ref[i] 
-                //<< " dev[" << i << "] = " << src_out[i] 
-                //<< std::endl; 
+  std::vector<base, aligned_allocator<base>> demo_data(fmap_size, -128);
+  for ( int i=0; i<28; i++ ){
+    for ( int j=0; j<28; j++ ){
+      demo_data[j*32 +i*j*32] = ( (demo_img[i][j]==1)? 128 : -128);
     }
+  }  
 
-    rmse = rmse/out_size;
-    src_mean = src_mean/out_size;
-    dev_mean = dev_mean/out_size;
 
-    std::cout << "device out mean:" << dev_mean << std::endl
-              << "   ref out mean:" << src_mean << std::endl
-              << "          error:" << rmse     << std::endl;
+  std::vector<base,aligned_allocator<base>> src_fmap(conv1_in[0], conv1_in[0] + _conv1_in_size);
+  std::vector<base,aligned_allocator<base>> src_out (out_size,  0);
+  std::vector<base,aligned_allocator<base>> ref (last_out[0], last_out[0] + _last_out_size);
 
-    ref_res = arg_max( ref, out_size );
-    dev_res = arg_max( src_out, out_size );
-    if ( ref_res == dev_res )
-      ++match;
+  cl::Buffer* buf_fmap = cnnxcel.create_buffer( CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, 
+      //fmap_Bsize, src_fmap.data()
+      fmap_Bsize, demo_data.data()
+    );
 
-    std::cout << "TF predicted result = " << ref_res << std::endl;
-    std::cout << "Device predicted result = " << dev_res << std::endl;
-  }
+  cl::Buffer* buf_out = cnnxcel.create_buffer( CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, 
+      out_Bsize, src_out.data()
+    );
 
-  std::cout << "Accuracy = " << float(match)/total << std::endl;
+  std::cout << "Running inference..." << std::endl;
+
+  cnnxcel.run_inference( *buf_fmap, *buf_out );
+
+  double src_mean = 0;
+  double dev_mean = 0;
+  double rmse = 0;
+
+  //for ( int i=0;i<out_size;i++){
+  //  rmse += sqrt( (src_out[i]-ref[i])*(src_out[i]-ref[i]) );
+  //  src_mean += ref[i];
+  //  dev_mean += src_out[i];
+  //  //std::cout << "cpu[" << i << "] = " << ref[i] 
+  //            //<< " dev[" << i << "] = " << src_out[i] 
+  //            //<< std::endl; 
+  //}
+
+  //rmse = rmse/out_size;
+  //src_mean = src_mean/out_size;
+  //dev_mean = dev_mean/out_size;
+
+  //std::cout << "device out mean:" << dev_mean << std::endl
+  //          << "   ref out mean:" << src_mean << std::endl
+  //          << "          error:" << rmse     << std::endl;
+
+  ref_res = arg_max( ref, out_size );
+  dev_res = arg_max( src_out, out_size );
+  if ( ref_res == dev_res )
+    ++match;
+
+  //std::cout << "TF predicted result = " << ref_res << std::endl;
+  std::cout << "Device predicted result = " << dev_res << std::endl;
+  //std::cout << "Accuracy = " << float(match)/total << std::endl;
 
   printf("Done!\n");
 
