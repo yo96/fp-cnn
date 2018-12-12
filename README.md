@@ -23,6 +23,9 @@ Link to our repo: https://github.com/yo96/fp-cnn.
    During our project, we got the permission from Ritchie to use this library but it is private. You can access
    this library after it becomes public.
    
+   **Please note that due to CMSX file size limit, we cannot upload the _dump.npy file to the system. You can download**
+   **the complete project at https://github.com/yo96/fp-cnn.**
+   
 - Run the generation framework
  
     `source utils/gen.sh`
