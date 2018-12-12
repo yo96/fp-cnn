@@ -1,5 +1,6 @@
 # fp-cnn
-An end-to-end framework to map a CNN (TensorFlow) onto FPGA (OpenCL).
+An end-to-end framework to map a CNN (TensorFlow) onto FPGA (OpenCL).   
+Link to our repo: https://github.com/yo96/fp-cnn.
 
 ## How to generate the accelerator
 - Specify the network configuration
