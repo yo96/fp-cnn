@@ -1,5 +1,5 @@
 # fp-cnn
-End-to-end frame work to map a CNN onto FPGA.
+An end-to-end frame work to map a CNN (TensorFlow) onto FPGA (OpenCL).
 
 ## How to generate the accelerator
 - Specify the network configuration
