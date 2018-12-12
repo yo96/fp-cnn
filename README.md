@@ -30,7 +30,7 @@ End-to-end frame work to map a CNN onto FPGA.
     and you can directly run software/hardware emulation there.
 
 ## Other projects in this repo    
-under `src` there are also a number of projects that we created when we are developing this framework:
+under `src` directory there are also a number of projects that we created when we are developing this framework:
 
  - `conv_example`: an example project that contains only functional-level kernels.
  - `conv`: initial project created when developing the compute kernel. It has functional-level `load_fmap`, `load_wts`, and a 
